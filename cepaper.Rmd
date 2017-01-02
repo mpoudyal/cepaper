@@ -38,7 +38,7 @@ summary(fit2)
 ```
 
 ### Plot both datasets against P4ges with fitted line
-I've just used the labelling to show the adjusted R<sup>2<sup> from the models above.
+I've just used the labelling to show the adjusted R<sup>2</sup> from the models above.
 
 ```{r plot, echo=FALSE}
 cazpop.plot <- ggplot(cazpop.melt, aes(x=p4ges, y=value, colour=variable)) + 
