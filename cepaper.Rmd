@@ -15,11 +15,91 @@ library(sjPlot)
 library(sjmisc)
 library(tidyr)
 library(reshape2)
+library(scales)
+```
+
+## Opportunity cost estimates from the CE model (NPV)
+### Comparing annualised equivalent with total annual income
+Since we only have total annual household income for the households in agricultural survey sub-sample, the total number of households for this analysis is 102 from three sites - Ampahitra (25), Zahamena (36), and Sahavazina (39) - with total annual household income data as well as opportunity costs estimates from CE (WTA).
+
+### Setup required function(s)
+```{r eaa_fun, echo=FALSE}
+##function for calculating EAA factor (this when multiplied by the NPV OC estimate gives the annualised equivalent)
+eaa <- function(t, r) {r/(1-(1+r)^-t)}
+```
+
+### Prepare data
+```{r oc_hhinc_data, echo=FALSE}
+#read data
+oc.df <- read.csv("ceoc_hhinc.csv")
+
+##add a new column with EAA value for current year for 60 year timeframe and discount rate ~ 0%
+oc.df$eaa60yr0pc <- oc.df$opp_cost_est*eaa(60,0.00001)
+##get eaa60yr0pc as proportion of total hh inc
+oc.df$prop1 <- oc.df$eaa60yr0pc/oc.df$usd
+
+##add another column with EAA value for current year for 60 year timeframe and discount rate of 2.5%
+oc.df$eaa60yr2p5pc <- oc.df$opp_cost_est*eaa(60,0.025)
+##get eaa60yr2p5pc as proportion of total hh inc
+oc.df$prop2 <- oc.df$eaa60yr2p5pc/oc.df$usd
+
+##add another column with EAA value for current year for 60 year timeframe and discount rate of 5% 
+oc.df$eaa60yr5pc <- oc.df$opp_cost_est*eaa(60,0.05)
+##get eaa60yr5pc as proportion of total hh inc
+oc.df$prop3 <- oc.df$eaa60yr5pc/oc.df$usd
+
+##subset data columns to be used in plots
+oc.df.sub1 <- subset(oc.df,
+                    select = c("usd","prop1","prop2","prop3"))
+
+##melt subsetted data for easy plotting against annual household income (usd)
+oc.df.sub1.melt <- melt(oc.df.sub1, id="usd")
+```
+
+### Plotting annualised equivalent of opportunity costs against total annual household income
+
+```{r oc_hhinc_plot, echo=FALSE}
+oc_hhinc_plot <- ggplot(oc.df.sub1.melt, aes(x=usd, y=value,
+                                    colour=variable)) +
+            geom_point(alpha=0.9) +
+            geom_smooth(method='gam') +
+            coord_cartesian(xlim = c(50,500), ylim = c(-.05,3)) +
+            xlab("\nTotal annual household income (US$)") +
+            ylab("Annualised household opportunity costs as % of total household income\n") +
+            scale_x_continuous(breaks = seq(50,500,50)) + 
+            scale_y_continuous(breaks = seq(0,3,.5), labels = scales::percent) + 
+            scale_colour_discrete(name="Time frame (t) and discount rate (r)",
+                 breaks=c("prop1","prop2","prop3"),
+                                labels=c(" t = 60 years, r = 0.001%",
+                                         " t = 60 years, r = 2.5%",
+                                         " t = 60 years, r = 5%")) +
+            theme_bw() +
+            theme(legend.position=c(.8,.9),
+                  legend.background = element_rect(colour = "black"),
+                  legend.title = element_text(size = 16),
+                  legend.text=element_text(size = 16),
+                  axis.title = element_text(size = 16),
+                  axis.text = element_text(size = 12),
+                  axis.line.x = element_line(colour = "black"),
+                  axis.line.y = element_line(colour = "black"))
+
+oc_hhinc_plot <- oc_hhinc_plot + geom_vline(xintercept = 247,
+                   linetype = "longdash",
+                   colour = "#666666") + 
+  annotate("text", x=242, y=2, 
+           label="Median hh inc (247 US$)", 
+           angle=90,
+           size=6)
+
+pdf("oc_hhinc_plot.pdf", width = 11, height = 8)
+print(oc_hhinc_plot)
+dev.off()
+
 ```
 
 ## CAZ population estimates
 ### Prepare data
-```{r data_prep, echo=FALSE}
+```{r cazpop_data, echo=FALSE}
 #load csv as a df
 caz.pop <- read.csv("caz_pop.csv")
 #reshape data for easy analysis
