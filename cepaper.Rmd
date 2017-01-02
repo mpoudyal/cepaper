@@ -1,0 +1,67 @@
+---
+title: "Figures for the paper *Who bears the cost of forest conservation?*"
+author: "Mahesh Poudyal"
+date: "2 January 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#load library and functions
+library(ggplot2)
+library(dplyr)
+library(magrittr)
+library(sjPlot)
+library(sjmisc)
+library(tidyr)
+library(reshape2)
+```
+
+## CAZ population estimates
+### Prepare data
+```{r data_prep, echo=FALSE}
+#load csv as a df
+caz.pop <- read.csv("caz_pop.csv")
+#reshape data for easy analysis
+cazpop.melt <- melt(caz.pop, id.vars = c("aois", "p4ges"))
+```
+
+### Fit linear models to check the best fit set
+```{r pop_fits, echo=FALSE}
+#LS07 vs P4ges
+fit1 <- lm(formula = ls07~p4ges, data = caz.pop)
+summary(fit1)
+#Fokontany-level data (2010) vs P4ges
+fit2 <- lm(formula = fkt2010~p4ges, data = caz.pop)
+summary(fit2)
+
+```
+
+### Plot both datasets against P4ges with fitted line
+I've just used the labelling to show the adjusted R^2^ from the models above.
+
+```{r plot, echo=FALSE}
+cazpop.plot <- ggplot(cazpop.melt, aes(x=p4ges, y=value, colour=variable)) + 
+  geom_point() +
+  geom_smooth(method="lm") + 
+  xlab("\nPopulation data collected from P4ges field sites") + 
+  ylab("Distributed population data in P4ges field sites\n") +
+  scale_colour_discrete(name="Population data distributed (vs P4ges field data)\n",
+                        labels=c(ls07 = expression(paste(" LS07 (Adj. ",R^2,"=0.80)")),
+                                 fkt2010 = expression(paste(" Fokontany 2010 (Adj. ",R^2,"=0.18)")))) +
+  theme_bw() + 
+  theme(legend.position=c(.30,.90),
+        legend.background = element_rect(colour = "black"),
+        legend.title = element_text(size = 16),
+        legend.text=element_text(size = 16),
+        legend.text.align = 0,
+        axis.title = element_text(size = 18),
+        axis.text = element_text(size = 12),
+        axis.line.x = element_line(colour = "black"),
+        axis.line.y = element_line(colour = "black"))
+
+pdf("caz_pop.pdf", width = 10, height = 7)
+print(cazpop.plot)
+dev.off()
+
+```
