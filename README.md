@@ -1,2 +1,2 @@
 # cepaper
-RStudio project for all the analysis done for cepaper
+RStudio project for all the analyses done for the paper **Who bears the cost of forest conservation?**
