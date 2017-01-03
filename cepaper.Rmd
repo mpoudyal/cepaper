@@ -253,6 +253,42 @@ dev.off()
 
 ```
 
+##Comparing opportunity costs estimates with contingent valuation data for the safeguard followup sample
+This analysis is based on the opportunity costs estimated for the 62 households in the safeguard followup sample based on their socio-economic characteristics and their distance to CAZ boundary (determinants in the CE model). 
+[**Note**: education data is missing for part of the sample at present so this estimation uses *Education*=0 (i.e., assuming all have low level of education). This will be rectified once the missing education data is collected in January 2017.]
+
+```{r sgfollow_data, echo=FALSE}
+occv.df <- read.csv("sgf_oc_cv.csv")
+
+#change sign of oc.cens
+occv.df$ocest <- -1*occv.df$oc.cens
+#get cv value as proportion of opportunty costs
+occv.df$cvpcoc <- occv.df$cv_usd/occv.df$ocest
+
+#plot oc vs cv
+occv.plot <- ggplot(occv.df, aes(x=ocest, y=cvpcoc)) + 
+  geom_point(aes(size=dist2park)) + theme_bw() + 
+  scale_size("Distance to PA boundary (km) \n(negative values=inside PA)",
+             range = c(0.5,5),
+             breaks=c(-3,-2,-1,0,1,2,3)) +
+  coord_cartesian(ylim = c(-.02,.5)) + 
+  scale_y_continuous(labels = scales::percent) + 
+  xlab("NPV of opportunity costs estimate (US$)") + 
+  ylab("Respondent's valuation of the compensation project as % of opportunity costs") +  
+  geom_smooth() + 
+  theme(axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.position=c(.85,.8),
+        legend.background = element_rect(colour = "black"))
+
+#plot output as pdf
+pdf("occv_plot.pdf", width = 11, height = 8)
+print(occv.plot)
+dev.off()
+
+```
+
+
 
 ## CAZ population estimates
 ### Prepare data
