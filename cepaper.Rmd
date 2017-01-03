@@ -97,6 +97,153 @@ dev.off()
 
 ```
 
+### Matrix plot
+The main idea here is to show either the number or percentage of households with annualised equivalent opportunity costs above a specific cut-off within CAZ based on our assumptions on the timeframe and discount rates, and estimated population. In the plot below, we use USD 120 as the cut-off figure for the opportunity cost estimates (annualised equivalent), with shades in the plot showing the percentage of households with estimated opportunity costs (annualised) higher than USD 120 per year, and selected quadrants annotated with total number of households with opportunity costs higher than USD 120 for those combinations of timeframe and discount rates.
+
+```{r matrix_plot, echo=FALSE}
+#sequencing the combination of timeframe and discount rates
+disc.years <- seq(20, 60, by=5)
+disc.rates <- seq(0.001, 5.5, by=0.5)/100
+
+matrix.eaa <- sapply(as.list(disc.years), function(x) sapply(as.list(disc.rates), function(y) eaa(x, y)))
+
+##function to calculate proportion of households greater than critical value
+prop.household <- function(x, val=120) {
+    tmp <- na.omit(x)
+    sum(tmp > val)/length(tmp)
+}
+
+## this will give the matrix as percentage of households above the threshold within our sample
+matrix.prop <- matrix(sapply(matrix.eaa, function(x) prop.household(x * oc.df$opp_cost_est)), ncol=length(disc.years))*100
+## this will give the matrix as number of households above the threshold extrapolated to the whole of CAZ population
+matrix.prop1 <- matrix(sapply(matrix.eaa, function(x) prop.household(x * oc.df$opp_cost_est)), ncol=length(disc.years))*8197
+
+## plotting
+require(latticeExtra)
+x.scale <- list(at=seq(0,5,0.5), cex=1.2)
+y.scale <- list(at=seq(20,60,5), cex=1.2)
+
+mplot1<- levelplot(matrix.prop, 
+          row.values=disc.rates*100, 
+          column.values=disc.years, 
+          aspect="full",
+          scales=list(x=x.scale, y=y.scale),
+          main=list("Households with estimated opportunity costs > US $120 per year"),
+          xlab=list('Discount rate (%)',cex=1.8), 
+          ylab=list('Time frame (years)', cex=1.8),
+          pretty=TRUE,
+          col.regions = grey(100:0/100),
+          colorkey=list(labels=list(cex=1.2)),
+          legend=list(top=list(fun=grid::textGrob("Percent",y=0,x=1.09))))
+mplot1
+
+## annotating the selected quadrants with the number of households for the timeframe-discount rate combination
+mplot1 <- mplot1 + layer(panel.text(5, 59, '3536', col="red")) + 
+  layer(panel.text(2.5, 59, '2411', col="red")) + 
+  layer(panel.text(0,59, '1366', col="red")) + 
+  layer(panel.text(5, 40, '3777', col="red")) + 
+  layer(panel.text(2.5, 40, '2893', col="red")) + 
+  layer(panel.text(0, 40, '1848', col="red")) + 
+  layer(panel.text(0, 21, '3375', col="red")) + 
+  layer(panel.text(2.5, 21, '3857', col="red")) +
+  layer(panel.text(5, 21, '4179', col="red"))
+
+pdf("matrix_plot.pdf", width = 8, height = 8)
+print(mplot1)
+dev.off()
+
+```
+
+
+## Panel with carbon value in CAZ, opportunity costs, compensation and number of households affected
+Using the key figures from our own estimation and existing data from other sources, we highlight the gap between potential value of carbon sequestered in CAZ protected area, estimated opportunity costs and actual compensation provided, including the recipients' valuation of the compensation. Key figures used are described below:
+
+*npv_oc_all* (=**2521**): Median opportunity costs (NPV) estimated per household (full sample - i.e., CAZ and existing PA sites)
+*npv_oc_caz* (=**1664**): Median opportunity costs (NPV) estimated per household (for CAZ sites)
+*sg_com* (=**120**): Average safeguard compensation spent per household (Obtained from MEEF/SAPM/CI. 2013. *Etude de faisabilité des Sous-Projets de Compensation des Personnes Affectées par le Projet, Nouvelle Aire Protégée du Corridor Ankeniheny-Zahamena (NAP CAZ)*, Programme Environmental III, Madagascar.)
+*cv_com* (=**87**): Average valuation of the compensation provided to the households (estimated from contingent valuation survey with 62 PAP households in *Ampahitra*)
+*elig_hh* (=**5771**): Total number of households estimated in/around CAZ protected area with NPV of opportunity costs higher than USD247 (median annual household income)
+*sg_hh* (=**1835**): Total number of households set to receive safeguards compensation (revised from the total initially identified PAPs of 2500) (source: MEEF/SAPM/CI. 2013. *Etude de faisabilité des Sous-Projets de Compensation des Personnes Affectées par le Projet, Nouvelle Aire Protégée du Corridor Ankeniheny-Zahamena (NAP CAZ)*, Programme Environmental III, Madagascar.)
+*comp_hh* (=**823**): Total number of households who had received compensation by the close of Third Environmental Program (source: World Bank. 2016. *Madagascar - Third Environmental Program Support Project*, W.B. Group, World Bank, Washington, D.C. Available at: https://goo.gl/I7VP6q, accessed on 25-10-2016.)
+*full_comp_hh* (=**0**): Total number of households who received compensation covering their opportunity costs
+*carbon* (=**110000000**): Total value of carbon sequestered in CAZ protected area per year due to avoided deforestation, based on one million tonnes of CO<sub>2</sub> sequestered per year (source: Rainforest Alliance. 2013. *Reduced Emissions from Deforesation in the Ankeniheny-Zahamena Corridor, Madagascar - Validation Report: VCS Version 3*. Available at: https://goo.gl/Yj0gJV, accessed on 2016-12-06.), and average social cost of per tonne of CO<sub>2</sub> for 2015 at 5% discount rate (USD 11, source: https://www.epa.gov/climatechange/social-cost-carbon, accessed on 20 Dec 2016)
+*val_c_pap* (=**19060**): Value of CO<sub>2</sub> sequestered in CAZ per PAP household (*carbon*/*elig_hh*)
+
+```{r gap_plot, echo=FALSE}
+#data
+comp.df <- read.csv("sg_comp.csv")
+#reshape data for easy plotting
+comp.df.melt <- melt(comp.df, id="sn")
+
+#plot with carbon value, opportunity costs, compensation and valuation of compensation provided (top)
+comp.plot1 <- ggplot(comp.df.melt[c(10,1,3,4),], 
+                     aes(variable, value, fill=variable, label=value)) + 
+  geom_col(width = 0.6) + theme_bw() + 
+  scale_fill_manual(values = c("orange","royalblue","orange","darkgreen")) + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 9)) + 
+  xlab("") + ylab("US$") + 
+  scale_x_discrete(limits=c("val_c_pap","npv_oc_all","sg_com","cv_com"), 
+                   labels = c("Carbon value of REDD+ project, \nper household affected",
+                              "Median HH opportunity \ncosts (NPV)",
+                              "Average spend on \ncompensation per HH",
+                              "Average value of \ncompensation per HH"))
+
+comp.plot1 <- comp.plot1 + geom_text(position = position_dodge(0.9), vjust=-0.25)
+
+
+##plot without carbon value (for inset)
+comp.plot1i <- ggplot(comp.df.melt[c(1,3,4),],
+                     aes(variable, value, fill=variable, label=value)) + 
+  geom_col(width = 0.5) + theme_bw() + 
+  scale_fill_manual(values = c("orange","royalblue","orange")) + 
+  theme(legend.position = "none") + 
+  xlab("") + ylab("US$") + 
+  scale_x_discrete(limits=c("npv_oc_all","sg_com","cv_com"), 
+                   labels = c("Opportunity \ncosts",
+                              "Spend on \ncompensation",
+                              "Value of \ncompensation"))
+comp.plot1i <- comp.plot1i + 
+  geom_text(position = position_dodge(0.9), vjust=-0.1, size = 3)
+
+## plot with eligible households, households identified as PAPs, households receiving compensation and those fully compensated
+hh.plot1 <- ggplot(comp.df.melt[5:8,], 
+                    aes(variable, value, fill=variable, label=value)) + 
+  geom_col(width = 0.6) + theme_bw() + 
+  scale_fill_manual(values = c("orange","royalblue","royalblue","orange")) + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 9)) + 
+  xlab("") + ylab("Number of HHs") + 
+  scale_x_discrete(labels = c("HHs with opportunity \ncosts greater than\nUS$247 (median HH income)",
+                              "HHs identified \nto receive compensation",
+                              "HHs who received\ncompensation",
+                              "HHs fully \ncompensated"))
+
+hh.plot1 <- hh.plot1 + geom_text(position = position_dodge(0.9), vjust=-0.25)
+
+##for inset
+require(grid)
+vp1 <- viewport(width = 0.45, 
+                height = 0.35,
+                x = 0.76,
+                y = 0.81)
+
+##output as pdf
+pdf("occvhh_panel_new.pdf", width = 8, height = 8) 
+
+pushViewport(viewport(layout = grid.layout(2, 1)))
+
+vplayout <- function(x, y) 
+  viewport(layout.pos.row = x, layout.pos.col = y)
+
+print(comp.plot1, vp = vplayout(1, 1)) 
+print(hh.plot1, vp = vplayout(2, 1))
+print(comp.plot1i, vp = vp1)
+dev.off()
+
+```
+
+
 ## CAZ population estimates
 ### Prepare data
 ```{r cazpop_data, echo=FALSE}
