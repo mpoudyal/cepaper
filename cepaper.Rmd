@@ -210,12 +210,12 @@ comp.plot1i <- ggplot(comp.df.melt[c(1,3,4),],
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","orange")) + 
   theme(legend.position = "none",
-        axis.text.x = element_blank()) + 
-  xlab("") + ylab("US$") #+ 
-  #scale_x_discrete(limits=c("npv_oc_all","sg_com","cv_com"), 
-                   #labels = c("Opportunity \ncosts",
-                    #          "Spend on \ncompensation",
-                     #         "Value of \ncompensation"))
+        axis.text.x = element_text(size = 7)) + 
+  xlab("") + ylab("US$") + 
+  scale_x_discrete(limits=c("npv_oc_all","sg_com","cv_com"), 
+                   labels = c("Median HH opportunity \ncosts (NPV)",
+                              "Average spend on \ncompensation per HH",
+                              "Average value of \ncompensation per HH"))
 #comp.plot1i <- comp.plot1i + 
  # geom_text(position = position_dodge(0.9), vjust=-0.1, size = 3)
 
@@ -236,8 +236,8 @@ hh.plot1 <- hh.plot1 + geom_text(position = position_dodge(0.9), vjust=-0.25)
 
 ##for inset
 require(grid)
-vp1 <- viewport(width = 0.5, 
-                height = 0.36,
+vp1 <- viewport(width = 0.49, 
+                height = 0.35,
                 x = 0.74,
                 y = 0.81)
 
