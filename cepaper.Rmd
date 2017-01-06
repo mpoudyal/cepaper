@@ -340,3 +340,116 @@ print(cazpop.plot)
 dev.off()
 
 ```
+
+## Supplementary(?) plot on land access
+This uses data on the number of each type of plots that households have access to, and how they gained access to those plots in order to get a summary on how households in each of our study sites gain access to the land.
+
+### Land Data
+```{r land_data, echo=FALSE}
+##land holding
+cland <- read.csv("land.csv")
+##missing
+cland[cland==-98] <- NA
+str(cland)
+##subsetting required variables
+land.df <- subset(cland, select = c(1:4,6,8,10,13:14,17))
+str(land.df)
+
+##defining land type
+land.type <- c("Tavy", "Tavy", "Tanimbary", "Tanimboly", "Other")
+land.df$plot_type <- as.factor(land.type[land.df$plot_type])
+
+##defining land ownership
+ownship.type <- c("Inherited", "Rented", "Bought", "Borrowed", "Cleared", "Other")
+land.df$plot_ownership <- as.factor(ownship.type[land.df$plot_ownership])
+
+##site order
+site.org <- c("Ampahitra","Sahavazina","Amporoforo","Mantadia","Zahamena")
+site.order <- c("1,REDD+ project\nwith safeguard","2,REDD+ project\nwithout safeguard","Amporoforo (Gradient)","3,Established PA\n(Zahamena)","4,Established PA\n(Mantadia)")
+land.df$site <- factor(land.df$site, levels = site.org, labels = site.order)
+```
+
+### Land data preparation for plotting
+```{r land_dataprep, echo=FALSE, include=FALSE}
+land.df$exists <- 1
+
+land.test <- tbl_df(land.df %>% filter(!is.na(plot_type), plot_type!="Other", plot_ownership!="Other"))
+
+land.df.sparse <- land.test %>%
+    xtabs(formula = sn ~ resp_id + plot_type + plot_ownership + site) %>%
+        as.data.frame()
+
+land.df.sparse$Freq <- ifelse(land.df.sparse$Freq==0, 0, 1)
+
+land.df.summary <- land.df.sparse %>%
+    filter(!is.na(plot_type), plot_type!="Other",
+                                   plot_ownership!="Other") %>%
+    group_by(resp_id) %>%
+        mutate(count1=n()) %>%
+            group_by(resp_id, site, plot_type, plot_ownership) %>%
+                mutate(count2=sum(Freq), prop=count2/count1) %>%
+                    group_by(site, plot_type, plot_ownership) %>%
+                        summarize(mean_prop=mean(prop), sd_prop=sd(prop), n=n()) %>%
+                        mutate(CI=sd_prop/sqrt(n)*1.96, LL=mean_prop-CI,
+                               UL=mean_prop+CI)
+
+#without plot_type grouping (but keeping site groupings)
+land.test2 <- tbl_df(land.df %>% filter(!is.na(plot_type), 
+                                        !is.na(plot_ownership), 
+                                        plot_ownership!="Other"))
+land.test2.sparse <- land.test2 %>%
+    xtabs(formula = sn ~ resp_id + plot_ownership + site) %>%
+        as.data.frame()
+
+land.test2.sparse$Freq <- ifelse(land.test2.sparse$Freq==0, 0, 1)
+
+land.all <- land.test2.sparse %>%
+    filter(plot_ownership!="Other") %>%
+    group_by(resp_id) %>%
+        mutate(count1=n()) %>%
+            group_by(resp_id, site, plot_ownership) %>%
+                mutate(count2=sum(Freq), prop=count2/count1) %>%
+                    group_by(site, plot_ownership) %>%
+                        summarize(mean_prop=mean(prop), sd_prop=sd(prop), n=n()) %>%
+                        mutate(CI=sd_prop/sqrt(n)*1.96, LL=mean_prop-CI,
+                               UL=mean_prop+CI)
+
+land.all <- land.all %>%
+    group_by(site) %>%
+        mutate(sumprop=sum(mean_prop), mean_prop=mean_prop/sumprop,
+               LL=LL/sumprop, UL=UL/sumprop)
+
+land.all$Ownership <- factor(land.all$plot_ownership,
+                             levels = c("Inherited","Cleared","Bought","Rented","Borrowed"))
+
+```
+
+### Plotting land data
+
+```{r land_access, echo=FALSE}
+##grouped by sites (ONLY CE SITES)
+land.plot.ce <- land.all %>% filter(is.na(Ownership)==F, site!="Amporoforo (Gradient)") %>% 
+  ggplot(aes(site, mean_prop, fill=Ownership)) +
+    geom_bar(position=position_dodge(0.9), stat="identity") +
+        geom_errorbar(aes(ymin=LL, ymax=UL),
+                position=position_dodge(0.9), width=0.2) + 
+        theme_bw() + xlab(NULL) + ylab("Proportion of plots\n") + 
+  theme(text=element_text(size=20), 
+                axis.text.x=element_text(size=16, face = "bold", colour = "black"), 
+                axis.text.y=element_text(size=16,face= "bold", colour = "black"))
+  
+land.plot.ce <- land.plot.ce + theme(legend.position="top", 
+                    legend.title=element_blank(), 
+                    legend.direction = "horizontal")
+
+##as percentage
+land.plot.ce <- land.plot.ce + scale_y_continuous(labels = scales::percent) + 
+  ylab("Percentage of plots\n")
+
+##pdf output
+pdf("land_plot_ce.pdf", width=11, height=8)
+print(land.plot.ce)
+dev.off()
+
+```
+
