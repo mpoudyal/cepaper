@@ -84,11 +84,11 @@ oc_hhinc_plot <- ggplot(oc.df.sub1.melt, aes(x=usd, y=value,
                   axis.line.x = element_line(colour = "black"),
                   axis.line.y = element_line(colour = "black"))
 
-oc_hhinc_plot <- oc_hhinc_plot + geom_vline(xintercept = 247,
+oc_hhinc_plot <- oc_hhinc_plot + geom_vline(xintercept = 233,
                    linetype = "longdash",
                    colour = "#666666") + 
-  annotate("text", x=242, y=2, 
-           label="Median hh inc (247 US$)", 
+  annotate("text", x=226, y=2, 
+           label="Median hh inc (233 US$)", 
            angle=90,
            size=6)
 
@@ -139,15 +139,15 @@ mplot1<- levelplot(matrix.prop,
 mplot1
 
 ## annotating the selected quadrants with the number of households for the timeframe-discount rate combination
-mplot1 <- mplot1 + layer(panel.text(5, 59, '3536', col="red")) + 
-  layer(panel.text(2.5, 59, '2411', col="red")) + 
+mplot1 <- mplot1 + layer(panel.text(5, 59, '3375', col="red")) + 
+  layer(panel.text(2.5, 59, '2331', col="red")) + 
   layer(panel.text(0,59, '1366', col="red")) + 
   layer(panel.text(5, 40, '3777', col="red")) + 
-  layer(panel.text(2.5, 40, '2893', col="red")) + 
-  layer(panel.text(0, 40, '1848', col="red")) + 
+  layer(panel.text(2.5, 40, '2732', col="red")) + 
+  layer(panel.text(0, 40, '1768', col="red")) + 
   layer(panel.text(0, 21, '3375', col="red")) + 
-  layer(panel.text(2.5, 21, '3857', col="red")) +
-  layer(panel.text(5, 21, '4179', col="red"))
+  layer(panel.text(2.5, 21, '3777', col="red")) +
+  layer(panel.text(5, 21, '4018', col="red"))
 
 pdf("matrix_plot.pdf", width = 8, height = 8)
 print(mplot1)
@@ -159,15 +159,15 @@ dev.off()
 ## Panel with carbon value in CAZ, opportunity costs, compensation and number of households affected
 Using the key figures from our own estimation and existing data from other sources, we highlight the gap between potential value of carbon sequestered in CAZ protected area, estimated opportunity costs and actual compensation provided, including the recipients' valuation of the compensation. Key figures used are described below:
 
-- *npv_oc_all* (=**2521**): Median opportunity costs (NPV) estimated per household (full sample - i.e., CAZ and existing PA sites)
+- *npv_oc_all* (=**2375**): Median opportunity costs (NPV) estimated per household (full sample - i.e., CAZ and existing PA sites)
 
-- *npv_oc_caz* (=**1664**): Median opportunity costs (NPV) estimated per household (for CAZ sites)
+- *npv_oc_caz* (=**1568**): Median opportunity costs (NPV) estimated per household (for CAZ sites)
 
 - *sg_com* (=**120**): Average safeguard compensation spent per household (Obtained from MEEF/SAPM/CI. 2013. *Etude de faisabilité des Sous-Projets de Compensation des Personnes Affectées par le Projet, Nouvelle Aire Protégée du Corridor Ankeniheny-Zahamena (NAP CAZ)*, Programme Environmental III, Madagascar.)
 
-- *cv_com* (=**87**): Average valuation of the compensation provided to the households (estimated from contingent valuation survey with 62 PAP households in *Ampahitra*)
+- *cv_com* (=**79**): Average valuation of the compensation provided to the households (estimated from contingent valuation survey with 62 PAP households in *Ampahitra*)
 
-- *elig_hh* (=**5771**): Total number of households estimated in/around CAZ protected area with NPV of opportunity costs higher than USD247 (median annual household income)
+- *elig_hh* (=**5771**): Total number of households estimated in/around CAZ protected area with NPV of opportunity costs higher than USD233 (median annual household income)
 
 - *sg_hh* (=**1835**): Total number of households set to receive safeguards compensation (revised from the total initially identified PAPs of 2500) (source: MEEF/SAPM/CI. 2013. *Etude de faisabilité des Sous-Projets de Compensation des Personnes Affectées par le Projet, Nouvelle Aire Protégée du Corridor Ankeniheny-Zahamena (NAP CAZ)*, Programme Environmental III, Madagascar.)
 
