@@ -227,7 +227,7 @@ hh.plot1 <- ggplot(comp.df.melt[5:8,],
   theme(legend.position = "none",
         axis.text = element_text(size = 9)) + 
   xlab("") + ylab("Number of HHs") + 
-  scale_x_discrete(labels = c("HHs with opportunity \ncosts greater than\nUS$247 (median HH income)",
+  scale_x_discrete(labels = c("HHs with opportunity \ncosts greater than\nUS$233 (median HH income)",
                               "HHs identified \nto receive compensation",
                               "HHs who received\ncompensation",
                               "HHs fully \ncompensated"))
