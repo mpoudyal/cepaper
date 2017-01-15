@@ -1,11 +1,11 @@
 ---
 title: "Figures for the paper *Who bears the cost of forest conservation?*"
-author: "Mahesh Poudyal"
+author: "Mahesh Poudyal and James Gibbons"
 date: "2 January 2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 #load library and functions
 library(ggplot2)
@@ -21,7 +21,9 @@ library(grid)
 
 ## Opportunity cost estimates from the CE model (NPV)
 ### Comparing annualised equivalent with total annual income
-Since we only have total annual household income for the households in agricultural survey sub-sample, the total number of households for this analysis is 102 from three sites - Ampahitra (25), Zahamena (36), and Sahavazina (39) - with total annual household income data as well as opportunity costs estimates from CE (WTA).
+We get opportunity cost estimates in the form of net present value (NPV) based on the willingness to accept (WTA) choice experiment data. In order to compare these estimates with the total annual household income, we get annualised equivalent of the opportunity costs, using a timeframe of 60 years and a discount rate of 5% (see main paper text, and SI for details).
+
+Since we only have total annual household income for the sub-sample of the households who were part of the second phase of the surveys (i.e., detailed agricultural and off-farm income survey), the total number of households for this analysis is 102 from three sites - Ampahitra (25), Zahamena (36), and Sahavazina (39) - with total annual household income data as well as opportunity costs estimates from choice experiment modelling.
 
 #### Setup required function(s)
 ```{r eaa_fun, echo=FALSE}
@@ -98,8 +100,8 @@ dev.off()
 
 ```
 
-### Matrix plot - estimating number (& %) of households with opportunity costs higher than US$120 for all combinations of timeframe and discount rates
-The main idea here is to show either the number or percentage of households with annualised equivalent opportunity costs above a specific cut-off within CAZ based on our assumptions on the timeframe and discount rates, and estimated population. In the plot below, we use USD 120 as the cut-off figure for the opportunity cost estimates (annualised equivalent), with shades in the plot showing the percentage of households with estimated opportunity costs (annualised) higher than USD 120 per year, and selected quadrants annotated with total number of households with opportunity costs higher than USD 120 for those combinations of timeframe and discount rates. The data used for this comes from the two CAZ sites - site 1 (Ampahitra) (102) and site 2 (Sahavazina) (94) - so a total sample size of 196 households.
+### Matrix plot - estimating the percentage (and number) of households with opportunity costs higher than US$120 for all combinations of timeframe and discount rates
+The main idea here is to show the percentage (and/or number) of households with annualised equivalent opportunity costs above a specific cut-off within CAZ based on our assumptions on the timeframe and discount rates, and estimated population. In the plot below, we use USD 120 as the cut-off figure for the opportunity cost estimates (annualised equivalent), with shades in the plot showing the percentage of households with estimated opportunity costs (annualised) higher than USD 120 per year, and selected quadrants annotated with total number of households with opportunity costs higher than USD 120 for those combinations of timeframe and discount rates. The data used for this comes from the two CAZ sites - site 1 (Ampahitra) (102) and site 2 (Sahavazina) (94) - so a total sample size of 196 households.
 
 ```{r matrix_plot, echo=FALSE}
 #data preparation
@@ -169,15 +171,13 @@ dev.off()
 ## Panel with carbon value in CAZ, opportunity costs, compensation and number of households affected
 Using the key figures from our own estimation and existing data from other sources, we highlight the gap between potential value of carbon sequestered in CAZ protected area, estimated opportunity costs and actual compensation provided, including the recipients' valuation of the compensation. Key figures used are described below:
 
-- *npv_oc_all* (=**2375**): Median opportunity costs (NPV) estimated per household (full sample - i.e., CAZ and existing PA sites)
+- *npv_oc_all* (=**2375**): Median opportunity costs (NPV) estimated per household
 
-- *npv_oc_caz* (=**1568**): Median opportunity costs (NPV) estimated per household (for CAZ sites)
+- *sg_com* (=**120**): Average safeguard compensation expected to be spent per household (Obtained from MEEF/SAPM/CI. 2013. *Etude de faisabilité des Sous-Projets de Compensation des Personnes Affectées par le Projet, Nouvelle Aire Protégée du Corridor Ankeniheny-Zahamena (NAP CAZ)*, Programme Environmental III, Madagascar.)
 
-- *sg_com* (=**120**): Average safeguard compensation spent per household (Obtained from MEEF/SAPM/CI. 2013. *Etude de faisabilité des Sous-Projets de Compensation des Personnes Affectées par le Projet, Nouvelle Aire Protégée du Corridor Ankeniheny-Zahamena (NAP CAZ)*, Programme Environmental III, Madagascar.)
+- *cv_com* (=**79**): Average valuation of the compensation provided to the households in 2015 US$ (estimated from contingent valuation survey with 62 PAP households in *Ampahitra*)
 
-- *cv_com* (=**79**): Average valuation of the compensation provided to the households (estimated from contingent valuation survey with 62 PAP households in *Ampahitra*)
-
-- *elig_hh* (=**3555**): Total number of households estimated in/around CAZ protected area with annual opportunity costs higher than USD120
+- *elig_hh* (=**3555**): Total number of households estimated in/around CAZ protected area with annual opportunity costs higher than US$120
 
 - *sg_hh* (=**1835**): Total number of households set to receive safeguards compensation (revised from the total initially identified PAPs of 2500) (source: MEEF/SAPM/CI. 2013. *Etude de faisabilité des Sous-Projets de Compensation des Personnes Affectées par le Projet, Nouvelle Aire Protégée du Corridor Ankeniheny-Zahamena (NAP CAZ)*, Programme Environmental III, Madagascar.)
 
@@ -197,45 +197,48 @@ comp.df <- read.csv("sg_comp.csv")
 #reshape data for easy plotting
 comp.df.melt <- melt(comp.df, id="sn")
 
-#plot with carbon value, opportunity costs, compensation and valuation of compensation provided (top)
-comp.plot1 <- ggplot(comp.df.melt[c(10,1,3,4),], 
-                     aes(variable, value, fill=variable, label=value)) + 
-  geom_col(width = 0.5) + theme_bw() + 
-  scale_fill_manual(values = c("orange","royalblue","orange","darkgreen")) + 
-  theme(legend.position = "none",
-        axis.text = element_text(size = 9)) + 
-  xlab("") + ylab("US$") + 
-  scale_x_discrete(limits=c("val_c_pap","npv_oc_all","sg_com","cv_com"), 
-                   labels = c("Carbon value of REDD+ project, \nper household affected",
-                              "Median HH opportunity \ncosts (NPV)",
-                              "Average spend on \ncompensation per HH",
-                              "Average value of \ncompensation per HH"))
-
-comp.plot1 <- comp.plot1 + geom_text(position = position_dodge(0.9), vjust=-0.25)
-
-
-##plot without carbon value (for inset)
-comp.plot1i <- ggplot(comp.df.melt[c(1,3,4),],
+##plot with opportunity costs, compensation and valuation of compensation provided - without carbon value (top panel)
+comp.plot1 <- ggplot(comp.df.melt[c(1,3,4),],
                      aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","orange")) + 
   theme(legend.position = "none",
-        axis.text.x = element_text(size = 7)) + 
+        axis.text.x = element_text(size = 11),
+        axis.title.y = element_text(size = 14)) + 
   xlab("") + ylab("US$") + 
-  scale_x_discrete(limits=c("npv_oc_all","sg_com","cv_com"), 
+  scale_x_discrete(limits=c("npv_oc_all","sg_com","cv_com",""), 
                    labels = c("Median HH opportunity \ncosts (NPV)",
                               "Average spend on \ncompensation per HH",
-                              "Average value of \ncompensation per HH"))
-#comp.plot1i <- comp.plot1i + 
- # geom_text(position = position_dodge(0.9), vjust=-0.1, size = 3)
+                              "Average value of \ncompensation per HH",""))
+comp.plot1 <- comp.plot1 + 
+ geom_text(position = position_dodge(0.9), vjust=-0.25)
 
-## plot with eligible households, households identified as PAPs, households receiving compensation and those fully compensated
+
+#plot with carbon value, opportunity costs, compensation and valuation of compensation provided (for inset on top panel)
+comp.plot1i <- ggplot(comp.df.melt[c(10,1,3,4),], 
+                     aes(variable, value, fill=variable, label=value)) + 
+  geom_col(width = 0.5) + theme_bw() + 
+  scale_fill_manual(values = c("orange","royalblue","orange","darkgreen")) + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 7)) + 
+  xlab("") + ylab("US$") + 
+  scale_x_discrete(limits=c("val_c_pap","npv_oc_all","sg_com","cv_com"), 
+                   labels = c("Carbon value \nof REDD+ project, \nper household affected",
+                              "Median HH opportunity \ncosts (NPV)",
+                              "Average spend on \ncompensation per HH",
+                              "Average value of \ncompensation per HH"))
+
+comp.plot1i <- comp.plot1i + geom_text(position = position_dodge(0.9), vjust=-0.1)
+
+
+## plot with eligible households, households identified as PAPs, households receiving compensation and those fully compensated (bottom panel)
 hh.plot1 <- ggplot(comp.df.melt[5:8,], 
                     aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","royalblue","orange")) + 
   theme(legend.position = "none",
-        axis.text = element_text(size = 9)) + 
+        axis.text = element_text(size = 11),
+        axis.title.y = element_text(size = 14)) + 
   xlab("") + ylab("Number of HHs") + 
   scale_x_discrete(labels = c("HHs with opportunity \ncosts greater than\nUS$120 (annualised)",
                               "HHs identified \nto receive compensation",
@@ -246,13 +249,13 @@ hh.plot1 <- hh.plot1 + geom_text(position = position_dodge(0.9), vjust=-0.25)
 
 ##for inset
 require(grid)
-vp1 <- viewport(width = 0.49, 
-                height = 0.35,
-                x = 0.74,
+vp1 <- viewport(width = 0.55, 
+                height = 0.36,
+                x = 0.71,
                 y = 0.81)
 
-##output as pdf
-pdf("occvhh_panel_new.pdf", width = 8, height = 8) 
+##pdf output with inset
+pdf("occvhh_panel_carbon_inset.pdf", width = 10, height = 10) 
 
 pushViewport(viewport(layout = grid.layout(2, 1)))
 
@@ -263,6 +266,7 @@ print(comp.plot1, vp = vplayout(1, 1))
 print(hh.plot1, vp = vplayout(2, 1))
 print(comp.plot1i, vp = vp1)
 dev.off()
+
 ```
 
 ##Comparing opportunity costs estimates with contingent valuation data for the safeguard followup sample
@@ -279,19 +283,19 @@ occv.df$cvpcoc <- occv.df$cv_usd/occv.df$ocest
 
 #plot oc vs cv
 occv.plot <- ggplot(occv.df, aes(x=ocest, y=cvpcoc)) + 
-  geom_point(aes(size=dist2park)) + theme_bw() + 
-  scale_size("Distance to PA boundary (km) \n(negative values=inside PA)",
-             range = c(0.5,5),
-             breaks=c(-3,-2,-1,0,1,2,3)) +
+  geom_point() + theme_bw() + 
+  #scale_size("Distance to PA boundary (km) \n(negative values=inside PA)",
+             #range = c(0.5,5),
+             #breaks=c(-3,-2,-1,0,1,2,3)) +
   coord_cartesian(ylim = c(-.02,.5)) + 
   scale_y_continuous(labels = scales::percent) + 
   xlab("NPV of opportunity costs estimate (US$)") + 
   ylab("Respondent's valuation of the compensation project as % of opportunity costs") +  
   geom_smooth() + 
   theme(axis.title = element_text(size = 14),
-        axis.text = element_text(size = 12),
-        legend.position=c(.85,.8),
-        legend.background = element_rect(colour = "black"))
+        axis.text = element_text(size = 12))#,
+        #legend.position=c(.85,.8),
+        #legend.background = element_rect(colour = "black"))
 
 #plot output as pdf
 pdf("occv_plot.pdf", width = 11, height = 8)
