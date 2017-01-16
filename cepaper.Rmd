@@ -330,6 +330,8 @@ dev.off()
 
 
 ## CAZ population estimates
+We have access to two spatial datasets on population in Madagascar: (1) Fokontany-level (Fkt2010) data, and (2) Landscan 2007 (LS07) dataset. We used both population datasets to run the EcoEngine population algorithm in WaterWorld <sup id="a1">[1](#f1)</sup> and masked to the shapefile of CAZ with the 2km buffer to get population distribution within the area of interest. To check the fit of population distribution from these two datasets, we used P4ges project social sites as areas of interest and calculated the sum of population in each area, and compared to the data collected from the field survey.
+
 ### Prepare data
 ```{r cazpop_data, echo=FALSE}
 #load csv as a df
@@ -489,4 +491,8 @@ print(land.plot.ce)
 dev.off()
 
 ```
+---
+### Notes:
+<b id="f1">1</b> http://www.policysupport.org/waterworld
+
 
