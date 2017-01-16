@@ -1,2 +1,2 @@
-sn,npv_oc_all,npv_oc_caz,sg_com,cv_com,elig_hh,sg_hh,comp_hh,full_comp_hh,val_c_all,val_c_pap,carbon,oc
-1,2375,1568,120,79,3555,1835,823,0,13420,30942,110000000,10000000
+sn,npv_oc_all,npv_oc_caz,sg_com_min,sg_com_max,sg_com,cv_com,elig_hh,sg_hh,comp_hh,full_comp_hh,val_c_all,val_c_pap,carbon,oc
+1,2375,1568,101,173,132,79,3555,1835,823,0,13420,30942,110000000,10000000

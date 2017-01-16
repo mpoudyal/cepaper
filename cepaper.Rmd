@@ -209,17 +209,17 @@ comp.df <- read.csv("sg_comp.csv")
 comp.df.melt <- melt(comp.df, id="sn")
 
 ##plot with opportunity costs, compensation and valuation of compensation provided - without carbon value (top panel)
-comp.plot1 <- ggplot(comp.df.melt[c(1,3,4),],
+comp.plot1 <- ggplot(comp.df.melt[c(1,5,6),],
                      aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","orange")) + 
   theme(legend.position = "none",
-        axis.text.x = element_text(size = 11),
-        axis.title.y = element_text(size = 14)) + 
+        axis.text.x = element_text(size = 12),
+        axis.title.y = element_text(size = 15)) + 
   xlab("") + ylab("US$") + 
   scale_x_discrete(limits=c("npv_oc_all","sg_com","cv_com",""), 
                    labels = c("Median HH opportunity \ncosts (NPV)",
-                              "Average spend on \ncompensation per HH",
+                              "Average projected spend \non compensation per HH",
                               "Average value of \ncompensation per HH",""))
 comp.plot1 <- comp.plot1 + 
  geom_text(position = position_dodge(0.9), vjust=-0.25)
@@ -229,7 +229,7 @@ comp.plot1
 
 
 #plot with carbon value, opportunity costs, compensation and valuation of compensation provided (for inset on top panel)
-comp.plot1i <- ggplot(comp.df.melt[c(10,1,3,4),], 
+comp.plot1i <- ggplot(comp.df.melt[c(12,1,5,6),], 
                      aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","orange","darkgreen")) + 
@@ -239,7 +239,7 @@ comp.plot1i <- ggplot(comp.df.melt[c(10,1,3,4),],
   scale_x_discrete(limits=c("val_c_pap","npv_oc_all","sg_com","cv_com"), 
                    labels = c("Carbon value \nof REDD+ project, \nper household affected",
                               "Median HH opportunity \ncosts (NPV)",
-                              "Average spend on \ncompensation per HH",
+                              "Average projected spend \non compensation per HH",
                               "Average value of \ncompensation per HH"))
 
 comp.plot1i <- comp.plot1i + geom_text(position = position_dodge(0.9), vjust=-0.1)
@@ -249,13 +249,13 @@ comp.plot1i
 
 
 ## plot with eligible households, households identified as PAPs, households receiving compensation and those fully compensated (bottom panel)
-hh.plot1 <- ggplot(comp.df.melt[5:8,], 
+hh.plot1 <- ggplot(comp.df.melt[7:10,], 
                     aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","royalblue","orange")) + 
   theme(legend.position = "none",
-        axis.text = element_text(size = 11),
-        axis.title.y = element_text(size = 14)) + 
+        axis.text = element_text(size = 12),
+        axis.title.y = element_text(size = 15)) + 
   xlab("") + ylab("Number of HHs") + 
   scale_x_discrete(labels = c("HHs with opportunity \ncosts greater than\nUS$120 (annualised)",
                               "HHs identified \nto receive compensation",
@@ -503,4 +503,4 @@ dev.off()
 
 <b id="f5">5</b> Source: US EPA - "Social Cost of Carbon: Estimating the Benefits of Reducing Greenhouse Gas Emissions"  https://www.epa.gov/climatechange/social-cost-carbon, accessed on 20 Dec 2016. [↩︎](#n5)
 
-<b id="f6">6</b> http://www.policysupport.org/waterworld [↩](#n6)
+<b id="f6">6</b> http://www.policysupport.org/waterworld [↩︎](#n6)
