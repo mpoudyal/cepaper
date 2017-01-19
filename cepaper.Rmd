@@ -19,6 +19,10 @@ library(scales)
 library(grid)
 ```
 
+## Summarising wealth indicators
+
+
+
 ## Opportunity cost estimates from the CE model (NPV)
 ### Comparing annualised equivalent with total annual income
 We get opportunity cost estimates in the form of net present value (NPV) based on the willingness to accept (WTA) choice experiment data. In order to compare these estimates with the total annual household income, we get annualised equivalent of the opportunity costs, using a timeframe of 60 years and a discount rate of 5% (see main paper text, and SI for details).
@@ -182,11 +186,11 @@ dev.off()
 ## Panel with carbon value in CAZ, opportunity costs, compensation and number of households affected
 Using the key figures from our own estimation and existing data from other sources, we highlight the gap between potential value of carbon sequestered in CAZ protected area, estimated opportunity costs and actual compensation provided, including the recipients' valuation of the compensation. Key figures used are described below:
 
-- *npv_oc_all* (=**2375**): Median opportunity costs (NPV) estimated per household
+- *npv_oc_all* (=**US $2375**): Median opportunity costs (NPV) estimated per household
 
-- *sg_com* (=**120**): Average safeguard compensation expected to be spent per household <sup id="n1">[1](#f1)</sup>
+- *sg_com_max* (=**US $173**): Maximum projected spend per household on safeguard compensation through micro-project <sup id="n1">[1](#f1)</sup>
 
-- *cv_com* (=**79**): Average valuation of the compensation provided to the households in 2015 US$ (estimated from contingent valuation survey with 62 PAP households in *Ampahitra*)
+- *cv_com* (=**US $79**): Average valuation of the compensation provided to the households in 2015 US$ (estimated from contingent valuation survey with 62 PAP households in *Ampahitra*)
 
 - *elig_hh* (=**3555**): Total number of households estimated in/around CAZ protected area with annual opportunity costs higher than US$120
 
@@ -209,40 +213,43 @@ comp.df <- read.csv("sg_comp.csv")
 comp.df.melt <- melt(comp.df, id="sn")
 
 ##plot with opportunity costs, compensation and valuation of compensation provided - without carbon value (top panel)
-comp.plot1 <- ggplot(comp.df.melt[c(1,5,6),],
+comp.plot1 <- ggplot(comp.df.melt[c(1,4,6),],
                      aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","orange")) + 
-  theme(legend.position = "none",
-        axis.text.x = element_text(size = 12),
-        axis.title.y = element_text(size = 15)) + 
   xlab("") + ylab("US$") + 
-  scale_x_discrete(limits=c("npv_oc_all","sg_com","cv_com",""), 
-                   labels = c("Median HH opportunity \ncosts (NPV)",
-                              "Average projected spend \non compensation per HH",
-                              "Average value of \ncompensation per HH",""))
+  theme(legend.position = "none",
+        axis.text = element_text(size = 13),
+        axis.title.y = element_text(size = 15)) + 
+  scale_x_discrete(limits=c("npv_oc_all","sg_com_max","cv_com",""), 
+                   labels = c("Median NPV\nof opportunity costs\nper HH",
+                              "Maximum projected\nspend on compensation\nper HH",
+                              "Average value\nof compensation\nper HH",""))
 comp.plot1 <- comp.plot1 + 
- geom_text(position = position_dodge(0.9), vjust=-0.25)
+ geom_text(position = position_dodge(0.9), vjust=-0.25) + 
+  annotate("text", x = 0.5, y = 2400, label = "a)", size = 9)
 
 ##view plot
 comp.plot1
 
 
 #plot with carbon value, opportunity costs, compensation and valuation of compensation provided (for inset on top panel)
-comp.plot1i <- ggplot(comp.df.melt[c(12,1,5,6),], 
+comp.plot1i <- ggplot(comp.df.melt[c(12,1,4,6),], 
                      aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","orange","darkgreen")) + 
   theme(legend.position = "none",
-        axis.text = element_text(size = 7)) + 
+        axis.text = element_text(size = 8),
+        axis.title.y = element_text(size = 10)) + 
   xlab("") + ylab("US$") + 
-  scale_x_discrete(limits=c("val_c_pap","npv_oc_all","sg_com","cv_com"), 
-                   labels = c("Carbon value \nof REDD+ project, \nper household affected",
-                              "Median HH opportunity \ncosts (NPV)",
-                              "Average projected spend \non compensation per HH",
-                              "Average value of \ncompensation per HH"))
+  scale_x_discrete(limits=c("val_c_pap","npv_oc_all","sg_com_max","cv_com"), 
+                   labels = c("Carbon value\nof REDD+ project\nper HH affected",
+                              "Median NPV\nof opportunity costs\nper HH",
+                              "Maximum projected\nspend on compensation\nper HH",
+                              "Average value\nof compensation\nper HH"))
 
-comp.plot1i <- comp.plot1i + geom_text(position = position_dodge(0.9), vjust=-0.1)
+comp.plot1i <- comp.plot1i + 
+  geom_text(position = position_dodge(0.9), vjust=-0.1)
 
 ##view plot
 comp.plot1i
@@ -254,15 +261,17 @@ hh.plot1 <- ggplot(comp.df.melt[7:10,],
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","royalblue","orange")) + 
   theme(legend.position = "none",
-        axis.text = element_text(size = 12),
+        axis.text = element_text(size = 13),
         axis.title.y = element_text(size = 15)) + 
   xlab("") + ylab("Number of HHs") + 
-  scale_x_discrete(labels = c("HHs with opportunity \ncosts greater than\nUS$120 (annualised)",
-                              "HHs identified \nto receive compensation",
+  scale_x_discrete(labels = c("HHs with opportunity\ncosts greater than\nUS$120 (annualised)",
+                              "HHs identified\nto receive compensation",
                               "HHs who received\ncompensation",
-                              "HHs fully \ncompensated"))
+                              "HHs fully\ncompensated"))
 
-hh.plot1 <- hh.plot1 + geom_text(position = position_dodge(0.9), vjust=-0.25)
+hh.plot1 <- hh.plot1 + 
+  geom_text(position = position_dodge(0.9), vjust=-0.25) + 
+  annotate("text", x = 0.5, y = 3600, label = "b)", size = 9)
 
 ##view plot
 hh.plot1
@@ -275,7 +284,7 @@ vp1 <- viewport(width = 0.55,
                 y = 0.81)
 
 ##pdf output with inset
-pdf("occvhh_panel_carbon_inset.pdf", width = 10, height = 10) 
+pdf("occvhh_panel_carbon_inset.pdf", width = 11, height = 10) 
 
 pushViewport(viewport(layout = grid.layout(2, 1)))
 
@@ -357,24 +366,28 @@ I've just used the labelling to show the adjusted R<sup>2</sup> from the models 
 ```{r plot, echo=FALSE}
 cazpop.plot <- ggplot(cazpop.melt, aes(x=p4ges, y=value, colour=variable)) + 
   geom_point() +
-  geom_smooth(method="lm") + 
+  geom_smooth(method="lm", se = FALSE) + 
   xlab("\nPopulation data collected from P4ges field sites") + 
   ylab("Distributed population data in P4ges field sites\n") +
-  scale_colour_discrete(name="Population data distributed (vs P4ges field data)\n",
+  coord_cartesian(xlim = c(0,3100), ylim = c(0,3100)) + 
+  scale_x_continuous(expand = c(0,0)) + 
+  scale_y_continuous(expand = c(0,0)) +
+  annotate("segment", x=-Inf, xend=Inf,y=-Inf, yend=Inf) + 
+  scale_colour_discrete(name="Population data distributed (vs P4ges field data)",
                         labels=c(ls07 = expression(paste(" LS07 (Adj. ",R^2,"=0.80)")),
                                  fkt2010 = expression(paste(" Fokontany 2010 (Adj. ",R^2,"=0.18)")))) +
   theme_bw() + 
-  theme(legend.position=c(.30,.90),
-        legend.background = element_rect(colour = "black"),
-        legend.title = element_text(size = 16),
-        legend.text=element_text(size = 16),
+  theme(legend.position=c(.35,.90),
+        legend.background = element_rect(colour = "white"),
+        legend.title = element_text(size = 14, face = "bold"),
+        legend.text=element_text(size = 12),
         legend.text.align = 0,
         axis.title = element_text(size = 18),
         axis.text = element_text(size = 12),
         axis.line.x = element_line(colour = "black"),
         axis.line.y = element_line(colour = "black"))
 
-pdf("caz_pop.pdf", width = 10, height = 7)
+pdf("caz_pop.pdf", width = 8, height = 8)
 print(cazpop.plot)
 dev.off()
 
