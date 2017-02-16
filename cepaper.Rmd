@@ -30,9 +30,13 @@ We get opportunity cost estimates in the form of net present value (NPV) based o
 Since we only have total annual household income for the sub-sample of the households who were part of the second phase of the surveys (i.e., detailed agricultural and off-farm income survey), the total number of households for this analysis is 102 from three sites - Ampahitra (25), Zahamena (37), and Sahavazina (40) - with total annual household income data as well as opportunity costs estimates from choice experiment modelling.
 
 #### Setup required function(s)
-```{r eaa_fun, echo=FALSE}
+```{r functions, echo=FALSE}
 ##function for calculating EAA factor (this when multiplied by the NPV OC estimate gives the annualised equivalent)
 eaa <- function(t, r) {r/(1-(1+r)^-t)}
+
+##function for extracting total number of households with NPV OC greater than a given threshold
+pap_hh <- function(i, c) {round((sum(c>i)/196)*8197)}
+
 ```
 
 #### Prepare data
@@ -206,34 +210,45 @@ Using the key figures from our own estimation and existing data from other sourc
 
 - *cv_com* (=**US $79**): Average valuation of the compensation provided to the households in 2015 US$ (estimated from contingent valuation survey with 62 PAP households in *Ampahitra*)
 
-- *elig_hh* (=**3555**): Total number of households estimated in/around CAZ protected area with annual opportunity costs higher than US$120
+- *caz_tot_hh* (=**3555**): Total number of households estimated to be inhabiting in/around CAZ protected area (2km buffer)
 
-- *sg_hh* (=**1835**): Total number of households set to receive safeguards compensation (revised from the total initially identified PAPs of 2500) <sup id="n2">[2](#f2)</sup>
+- *sg_ided_hh* (=**2500**): Total number of households originally identified as PAPs <sup id="n2">[2](#f2)</sup>
 
-- *comp_hh* (=**823**): Total number of households who had received compensation by the close of Third Environmental Program <sup id="n3">[3](#f3)</sup>
+- *uncomp_hh* (=**1012**): Total number of households who had yet to be compensated by the close of Third Environmental Program <sup id="n3">[3](#f3)</sup>
 
 - *full_comp_hh* (=**0**): Total number of households who received compensation covering their opportunity costs
 
 - *carbon* (=**110000000**): Total value of carbon sequestered in CAZ protected area due to avoided deforestation (for ten years), equates to around one million tonnes of CO<sub>2</sub> sequestered per year <sup id="n4">[4](#f4)</sup>, and average social cost of per tonne of CO<sub>2</sub> for 2015 at 5% discount rate (USD 11) <sup id="n5">[5](#f5)</sup>
 
-- *val_c_pap* (=**30942**): Value of CO<sub>2</sub> sequestered in CAZ per PAP household over ten year period (*carbon*/*elig_hh*)
-
 
 ```{r gap_plot, echo=FALSE}
-#data
+#initial data
 comp.df <- read.csv("sg_comp.csv")
+
+#compute and add more data columns
+##number of potential pap households for 2x median hh income as the threshold (i.e., hhs with NPV OC > 2x median annual hh income)
+comp.df$pap_2xinc <- pap_hh(2*comp.df$med_hh_inc, oc_caz.df$opp_cost_est)
+
+##number of potential pap households for 3x median hh income as the threshold
+comp.df$pap_3xinc <- pap_hh(3*comp.df$med_hh_inc, oc_caz.df$opp_cost_est)
+
+##number of potential pap households for 4x median hh income as the threshold
+comp.df$pap_4xinc <- pap_hh(4*comp.df$med_hh_inc, oc_caz.df$opp_cost_est)
+
+##value of carbon per household in the CAZ
+comp.df$carbon_phh <- round(comp.df$carbon/8197)
 
 #reshape data for easy plotting
 comp.df.melt <- melt(comp.df, id="sn")
 
 ##plot with opportunity costs, compensation and valuation of compensation provided - without carbon value (top panel)
-comp.plot1 <- ggplot(comp.df.melt[c(1,4,6),],
+comp.plot1 <- ggplot(comp.df.melt[c(1,4,5),],
                      aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","orange")) + 
   xlab("") + ylab("US$") + 
   theme(legend.position = "none",
-        axis.text = element_text(size = 13),
+        axis.text = element_text(size = 13, colour = "black"),
         axis.title.y = element_text(size = 15)) + 
   scale_x_discrete(limits=c("npv_oc_all","sg_com_max","cv_com",""), 
                    labels = c("Median NPV\nof opportunity costs\nper HH",
@@ -248,15 +263,16 @@ comp.plot1
 
 
 #plot with carbon value, opportunity costs, compensation and valuation of compensation provided (for inset on top panel)
-comp.plot1i <- ggplot(comp.df.melt[c(12,1,4,6),], 
+comp.plot1i <- ggplot(comp.df.melt[c(17,1,4,5),], 
                      aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","orange","darkgreen")) + 
   theme(legend.position = "none",
-        axis.text = element_text(size = 8),
-        axis.title.y = element_text(size = 10)) + 
+        axis.text = element_text(size = 8, colour = "black"),
+        axis.title.y = element_text(size = 12)) + 
   xlab("") + ylab("US$") + 
-  scale_x_discrete(limits=c("val_c_pap","npv_oc_all","sg_com_max","cv_com"), 
+  scale_y_continuous(breaks = seq(0,15000,2500)) + 
+  scale_x_discrete(limits=c("carbon_phh","npv_oc_all","sg_com_max","cv_com"), 
                    labels = c("Carbon value\nof REDD+ project\nper HH affected",
                               "Median NPV\nof opportunity costs\nper HH",
                               "Maximum projected\nspend on compensation\nper HH",
@@ -267,25 +283,58 @@ comp.plot1i <- comp.plot1i +
 
 ##view plot
 comp.plot1i
+require(data.table)
+pap1 <- data.table(lab=c("pap_hh", "sg_ided","comp_hh"),
+                   pap=c(5228,0,0))
+pap2 <- data.table(lab=c("pap_hh", "sg_ided", "comp_hh"),
+                   pap=c(4935,0,0))
+pap3 <- data.table(lab=c("pap_hh", "sg_ided", "comp_hh"),
+                   pap=c(4600,2500,0))
 
-
-## plot with eligible households, households identified as PAPs, households receiving compensation and those fully compensated (bottom panel)
-hh.plot1 <- ggplot(comp.df.melt[7:10,], 
-                    aes(variable, value, fill=variable, label=value)) + 
-  geom_col(width = 0.5) + theme_bw() + 
-  scale_fill_manual(values = c("orange","royalblue","royalblue","orange")) + 
+p <- ggplot(NULL, aes(lab, pap)) + 
+  geom_col(aes(fill = "pap3"), data = pap3, alpha = 1, width = 0.5) +
+  geom_col(aes(fill = "pap2"), data = pap2, alpha = 0.9, width = 0.5) + 
+  geom_col(aes(fill = "pap1"), data = pap1, alpha = 0.6, width = 0.5) + 
+  theme_bw() + 
+  scale_fill_manual(values = c("orange","orange","royalblue")) + 
+  xlab("") + ylab("Number of households") + 
+  scale_y_continuous(breaks = seq(0, 6000, 1000)) + 
+  scale_x_discrete(limits = c("pap_hh","sg_ided","comp_hh",""),
+                   labels = c("HHs with NPV of\nopportunity costs >\n2-4x annual income",
+                              "HHs identified\nto receive\ncompensation",
+                              "HHs fully\ncompensated","")) + 
   theme(legend.position = "none",
-        axis.text = element_text(size = 13),
-        axis.title.y = element_text(size = 15)) + 
+        axis.text = element_text(size = 13, colour = "black"),
+        axis.title.y = element_text(size = 15))
+p <- p + annotate("text", x = 0.5, y = 5300, label = "b)", size = 9) + 
+  annotate("text", x = 1.3, y = 5280, label = "5228  (2x annual income)") + 
+  annotate("text", x = 1.3, y = 5000, label = "4935  (3x annual income)") + 
+  annotate("text", x = 1.3, y = 4670, label = "4600  (4x annual income)") + 
+  annotate("text", x = 2, y = 2600, label = "2500") + 
+  annotate("text", x = 3, y = 0, label = "0")
+p
+
+## plot with eligible households, households identified as PAPs, and those fully compensated (bottom panel)
+hh.plot1 <- ggplot(comp.df.melt[c(14:16,8,11),], 
+                    aes(variable, value, fill=variable, label=value)) + 
+  geom_col(width = 0.5) + 
+  theme_bw() + 
+  scale_fill_manual(values = c("royalblue","orange","orange","orange","orange")) + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 13, colour = "black"),
+        axis.title.y = element_text(size = 16)) + 
   xlab("") + ylab("Number of HHs") + 
-  scale_x_discrete(labels = c("HHs with opportunity\ncosts greater than\nUS$120 (annualised)",
-                              "HHs identified\nto receive compensation",
-                              "HHs who received\ncompensation",
+  scale_y_continuous(breaks = seq(0, 6000, 1000)) +
+  scale_x_discrete(limits = c("pap_2xinc","pap_3xinc","pap_4xinc","sg_ided_hh","full_comp_hh"),
+                   labels = c("HHs with NPV of\nopportunity costs >\n2x annual income",
+                              "HHs with NPV of\nopportunity costs >\n3x annual income",
+                              "HHs with NPV of\nopportunity costs >\n4x annual income",
+                              "HHs identified\nto receive\ncompensation",
                               "HHs fully\ncompensated"))
 
 hh.plot1 <- hh.plot1 + 
   geom_text(position = position_dodge(0.9), vjust=-0.25) + 
-  annotate("text", x = 0.5, y = 3600, label = "b)", size = 9)
+  annotate("text", x = 0.5, y = 5300, label = "b)", size = 9)
 
 ##view plot
 hh.plot1
@@ -297,8 +346,21 @@ vp1 <- viewport(width = 0.55,
                 x = 0.71,
                 y = 0.81)
 
-##pdf output with inset
-pdf("occvhh_panel_carbon_inset.pdf", width = 11, height = 10) 
+##pdf output with inset (lower panel with overlapping first column)
+pdf("occvhh_panel_carbon_inset1.pdf", width = 11, height = 10) 
+
+pushViewport(viewport(layout = grid.layout(2, 1)))
+
+vplayout <- function(x, y) 
+  viewport(layout.pos.row = x, layout.pos.col = y)
+
+print(comp.plot1, vp = vplayout(1, 1)) 
+print(p, vp = vplayout(2, 1))
+print(comp.plot1i, vp = vp1)
+dev.off()
+
+##pdf output with inset (lower panel without overlap)
+pdf("occvhh_panel_carbon_inset2.pdf", width = 11, height = 10) 
 
 pushViewport(viewport(layout = grid.layout(2, 1)))
 
@@ -522,9 +584,9 @@ dev.off()
 ### Notes:
 <b id="f1">1</b> Source: MEEF/SAPM/CI (2013) *Etude de faisabilité des Sous-Projets de Compensation des Personnes Affectées par le Projet, Nouvelle Aire Protégée du Corridor Ankeniheny-Zahamena (NAP CAZ)*, Programme Environmental III, Madagascar. [↩︎](#n1)
 
-<b id="f2">2</b> Source: *ibid* [↩︎](#n2)
+<b id="f2">2</b> Source: World Bank (2016) *Madagascar - Third Environmental Program Support Project*, W.B. Group, World Bank, Washington, D.C. Available at: https://goo.gl/I7VP6q, accessed on 25-10-2016. [↩︎](#n2)
 
-<b id="f3">3</b> Source: World Bank (2016) *Madagascar - Third Environmental Program Support Project*, W.B. Group, World Bank, Washington, D.C. Available at: https://goo.gl/I7VP6q, accessed on 25-10-2016. [↩︎](#n3)
+<b id="f3">3</b> Source: *ibid* [↩︎](#n3)
 
 <b id="f4">4</b> Source: Rainforest Alliance (2013) *Reduced Emissions from Deforesation in the Ankeniheny-Zahamena Corridor, Madagascar - Validation Report: VCS Version 3*. Available at: https://goo.gl/Yj0gJV, accessed on 2016-12-06. [↩︎](#n4)
 
