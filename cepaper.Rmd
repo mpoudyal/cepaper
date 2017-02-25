@@ -6,6 +6,8 @@ latest revision: "25 February 2017"
 output: html_document
 ---
 
+All data used in the avalyses and in producing the figures outlined here are included in this repository. To fully replicate the analyses and produce the figures (copies of which are included in the repository as pdf files), clone/download the repository and follow the steps outlined in this document.
+
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # library and functions used in the analysis [can be loaded separately when required - see codes below]
@@ -38,8 +40,6 @@ Plot_ConvexHull<-function(xcoord, ycoord, lcolor){
 }
 
 ```
-
-All data used in the avalyses and in producing the figures outlined here are included in this repository. To fully replicate the analyses and produce the figures (copies of which are included in the repository as pdf files), clone/download the repository and follow the steps outlined in this document.
 
 ## Landholding and livelihoods of households in Corridor Ankeniheny-Zahamena (CAZ)
 
@@ -261,7 +261,7 @@ dev.off()
 ```
 
 ## Opportunity cost estimates from the CE model (NPV)
-We use the data from the choice experiment - willing to accept (WTA) surveys (see <b id="n7">[Poudyal et al. (2016)](#r1)</b>; <b id="n8">[Rakotonarivo (2016)](#r2)</b>, to estimate the opportunity costs of forest use restriction, particularly conversion into swidden agriculture plots using multinomial logit model as outlined below. The key results presented in the paper include a violin plot for the estimated opportunity costs by study sites alongside the coefficient plot of the estimates. The steps and codes to produce both plots and to present them as a panel are also outlined below.
+We use the data from the choice experiment - willing to accept (WTA) surveys (see <b id="n7">[Poudyal et al. (2016)](#r1)</b>; <b id="n8">[Rakotonarivo (2016)](#r2)</b>), to estimate the opportunity costs of forest use restriction, particularly conversion into swidden agriculture plots using multinomial logit model as outlined below. The key results presented in the paper include a violin plot for the estimated opportunity costs by study sites alongside the coefficient plot of the estimates. The steps and codes to produce both plots and to present them as a panel are also outlined below.
 
 ```{r opp_cost, echo=FALSE}
 # CE WTA Data
@@ -552,11 +552,11 @@ Using the key figures from our own estimation and existing data from other sourc
 
 - *npv_oc_all* (=**US $2375**): Median opportunity costs (NPV) estimated per household
 
-- *sg_com_max* (=**US $173**): Maximum projected spend per household on safeguard compensation through micro-project <sup id="n1">[1](#f1)</sup>
+- *sg_com_max* (=**US $173**): Maximum projected spend per household on safeguard compensation through micro-projects <sup id="n1">[1](#f1)</sup>
 
-- *cv_com* (=**US $79**): Average valuation of the compensation provided to the households in 2015 US$ (estimated from contingent valuation survey with 62 PAP households in *Ampahitra*)
+- *cv_com* (=**US $79**): Average valuation of the compensation provided to the households in 2015 US$ (estimated from contingent valuation survey with 62 PAP households in *Ampahitra*, see main text and SI)
 
-- *caz_tot_hh* (=**9837**): Total number of households estimated to be inhabiting in/around CAZ protected area (2km buffer)
+- *caz_tot_hh* (=**9837**): Total number of households estimated to be inhabiting in/around CAZ protected area (2km buffer) (see main text, SI, and 'CAZ population estimates' section below)
 
 - *sg_ided_hh* (=**2500**): Total number of households originally identified as PAPs <sup id="n2">[2](#f2)</sup>
 
