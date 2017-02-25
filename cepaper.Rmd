@@ -1,75 +1,511 @@
 ---
-title: "Figures for the paper *Who bears the cost of forest conservation?*"
+title: "Data analysis and figures for the paper *Who bears the cost of forest conservation?*"
 authors: "Mahesh Poudyal and James Gibbons"
 date: "2 January 2017"
+latest revision: "25 February 2017"
 output: html_document
 ---
 
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-#load library and functions
-library(ggplot2)
+# library and functions used in the analysis [can be loaded separately when required - see codes below]
 library(dplyr)
 library(magrittr)
-library(sjPlot)
-library(sjmisc)
 library(tidyr)
 library(reshape2)
 library(scales)
+library(polycor)
+library(psych)
+library(gmnl)
+library(mlogit)
+library(msm)
+library(ggplot2)
 library(grid)
-```
 
-## Summarising wealth indicators
-
-
-
-## Opportunity cost estimates from the CE model (NPV)
-### Comparing annualised equivalent with total annual income
-We get opportunity cost estimates in the form of net present value (NPV) based on the willingness to accept (WTA) choice experiment data. In order to compare these estimates with the total annual household income, we get annualised equivalent of the opportunity costs, using a timeframe of 60 years and a discount rate of 5% (see main paper text, and SI for details).
-
-Since we only have total annual household income for the sub-sample of the households who were part of the second phase of the surveys (i.e., detailed agricultural and off-farm income survey), the total number of households for this analysis is 102 from three sites - Ampahitra (25), Zahamena (37), and Sahavazina (40) - with total annual household income data as well as opportunity costs estimates from choice experiment modelling.
-
-#### Setup required function(s)
-```{r functions, echo=FALSE}
 ##function for calculating EAA factor (this when multiplied by the NPV OC estimate gives the annualised equivalent)
 eaa <- function(t, r) {r/(1-(1+r)^-t)}
 
-##function for extracting total number of households with NPV OC greater than a given threshold
-pap_hh <- function(i, c) {round((sum(c>i)/196)*8197)}
+##function for extracting total number of households with NPV OC greater than a given threshold in CAZ
+pap_hh <- function(i, c) {round((sum(c>i)/196)*9837)}
+
+## Function to draw convex hull around scatter plot (for SI Figure S1-b): from
+## https://chitchatr.wordpress.com/2011/12/30/convex-hull-around-scatter-plot-in-r/
+
+Plot_ConvexHull<-function(xcoord, ycoord, lcolor){
+  hpts <- chull(x = xcoord, y = ycoord)
+  hpts <- c(hpts, hpts[1])
+  lines(xcoord[hpts], ycoord[hpts], col = lcolor)
+}
 
 ```
 
-#### Prepare data
-```{r oc_hhinc_data, echo=FALSE}
-#read data
-oc.df <- read.csv("ceoc_hhinc.csv")
+All data used in the avalyses and in producing the figures outlined here are included in this repository. To fully replicate the analyses and produce the figures (copies of which are included in the repository as pdf files), clone/download the repository and follow the steps outlined in this document.
 
-##add a new column with EAA value for current year for 60 year timeframe and discount rate ~ 0%
+## Landholding and livelihoods of households in Corridor Ankeniheny-Zahamena (CAZ)
+
+### Principal component analysis (PCA) with wealth (poverty) indicators
+We use seven key local measures of wealth of the households in our study sites to derive poverty indices using PCA to feed into the choice experiment model, and to compare poverty among households between our sites (**SI Figure S1**). These measure are detailed in Table 2 in the main text. Data and codes in producing the **SI Figure S1** and PC scores that feed into the choice experiment model are outlined below.
+
+```{r poverty_pca, echo=FALSE}
+# Household (HH) information and wealth/poverty indicators
+hhinfo.df <- read.csv("hh_info_data.csv")
+
+## poverty indicators subset
+poverty <- hhinfo.df[,c(1:4,18:24)]
+
+
+## names for variables
+poverty.pca.set <- c("no_rooms", 
+                     "house_qual", 
+                     "tlu", 
+                     "food_sec", 
+                     "paddy", 
+                     "access_light", 
+                     "mplayer")
+poverty.pca.set.nice <- c("Number of rooms", 
+                          "House quality", 
+                          "Tropical livestock units", 
+                          "Food security", 
+                          "Irrigated rice", 
+                          "Access to light", 
+                          "Radio")
+## PCA [requires 'polycor' and 'psych' packages, load if not loaded already by uncommenting the lines below]
+# require(polycor)
+# require(psych)
+poverty.cor <- with(poverty, hetcor(no_rooms, 
+                                    as.ordered(house_qual),
+                                    tlu, 
+                                    food_sec, 
+                                    as.ordered(paddy),
+                                    as.ordered(access_light), 
+                                    as.ordered(mplayer),
+                                    ML=TRUE))
+
+poverty.pca <- principal(r=poverty.cor$correlations, rotate="none", nfactors=2)
+summary(poverty.pca)
+poverty.pca
+
+## Basic PCA plot
+plot(poverty.pca, labels=poverty.pca.set.nice)
+
+## PCA prediction data and adding PC scores to 'poverty' data frame
+poverty.pred.data <- poverty[, poverty.pca.set]
+colnames(poverty.pred.data) <- rownames(poverty.pca$loadings)
+poverty.pca$scores <- factor.scores(poverty.pred.data, poverty.pca)
+rownames(poverty.pca$loadings) <- poverty.pca.set.nice
+poverty <- cbind(poverty,  poverty.pca$scores$scores)
+
+## New site names to match with manuscript text and with other plots
+poverty$site2 <- factor(poverty$site, 
+                        levels=c("Mantadia", "Zahamena", "Sahavazina", "Ampahitra"),
+                        labels=c("4,Established PA\n(Mantadia)", 
+                                 "3,Established PA\n(Zahamena)",
+                                 "2,New PA\nwithout safeguard",
+                                 "1,New PA\nwith safeguard"))
+
+poverty$v.symbol <- with(poverty, 
+                         ifelse(site=="Ampahitra", 16,
+                                ifelse(site=="Sahavazina", 15,
+                                       ifelse(site=="Zahamena", 18, 17))))
+
+## Manually assigning colours for each site to match with other plots
+poverty$v.col <- with(poverty, 
+                      ifelse(site=="Ampahitra", "#C77CFF",
+                             ifelse(site=="Sahavazina", "#00BFC4",
+                                    ifelse(site=="Zahamena", "#7CAE00", "#F8766D"))))
+
+
+
+## Function to draw convex hull around scatter plot (for SI Figure S1-b): from
+## https://chitchatr.wordpress.com/2011/12/30/convex-hull-around-scatter-plot-in-r/
+
+Plot_ConvexHull<-function(xcoord, ycoord, lcolor){
+  hpts <- chull(x = xcoord, y = ycoord)
+  hpts <- c(hpts, hpts[1])
+  lines(xcoord[hpts], ycoord[hpts], col = lcolor)
+}
+
+## [requires 'dplyr' package, load if not loaded already by uncommenting the line below]
+# require(dplyr)
+poverty.nomis <- na.omit(poverty)
+find_hull <- function(df) df[chull(df$PC1, df$PC2), ]
+hulls <- poverty.nomis %>% group_by(site2) %>% do(find_hull(.))
+poverty.pca.loads <- data.frame(PC1=loadings(poverty.pca)[,1], PC2=loadings(poverty.pca)[,2], name=names(loadings(poverty.pca)[,1]))
+
+## PCA biplot (SI Figure S1-a) [requires 'ggplot2' package, load if not loaded already by uncommenting the line below]
+# require(ggplot2)
+pcplot1 <- ggplot(poverty.pca.loads, aes(x=0, y=0, xend=PC1, yend=PC2, label=name)) +
+    geom_text(aes(x=PC1, y=PC2, hjust="left")) +
+    geom_segment(arrow=arrow(length=unit(0.2,"cm"))) + theme_bw() + xlab("Wealth axis 1") +
+    annotate("text", x=0.025, y=0.65, label="a)", size=10) +
+    ylab("Wealth axis 2") + xlim(0,0.85)
+
+## view plot
+pcplot1
+
+## PCA scatter plot for all sites with convex hulls around scatter plot for each site (SI Figure S1-b)
+pcplot2 <- ggplot(poverty, aes(PC1, PC2, shape=site2, colour=site2, fill=site2)) +
+    geom_point() +
+    geom_polygon(data = hulls, alpha = 0.1) +
+    scale_colour_discrete(name=NULL, guide=guide_legend(keyheight=2, reverse = T)) +
+    scale_shape_discrete(name=NULL, guide=guide_legend(keyheight=2, reverse = T)) +
+    scale_fill_discrete(name=NULL, guide=guide_legend(keyheight=2, reverse = T)) +
+    xlab("Wealth axis 1") +
+    ylab(NULL) +
+    annotate("text", x=-2, y=6, label="b)", size=10) +
+    theme_bw()
+
+## view plot
+pcplot2
+
+## Combining two plots to create a panel (SI Figure S1) [requires 'grid' package, load if not loaded already by uncommenting the line below]
+# require(grid)
+
+grid.draw(cbind(ggplotGrob(pcplot1), ggplotGrob(pcplot2), size="last"))
+
+## output as PDF
+pdf("si_fig_s1.pdf", width = 11, height = 5.5)
+grid.draw(cbind(ggplotGrob(pcplot1), ggplotGrob(pcplot2), size="last"))
+dev.off()
+
+```
+
+### Summarising households' access to land
+We use the data on landholding and ways respondent households gained access to their plots of land, obtained from the first phase of the survey (see main text and SI, and <b id="n7">[Poudyal et al. (2016)](#r1)</b>) to produce **SI Figure S2** that summarises the various ways households in our study sites gained access to their plots of land. Steps involved in producing **SI Figure S2** with codes below.
+
+```{r land_access, echo=FALSE}
+## land holding data
+land <- read.csv("land_data.csv")
+## defining missing observations
+land[land==-98] <- NA
+
+## defining land type
+### [Note: 1 & 2 = Tavy (Swidden agriculture); 3 = Tanimbary (Paddy); 4 = Tanimboly (Perennial crops plots); 5 = Other]
+land.type <- c("Tavy", "Tavy", "Tanimbary", "Tanimboly", "Other")
+land$plot_type <- as.factor(land.type[land$plot_type])
+
+## defining land ownership
+ownship.type <- c("Inherited", "Rented", "Bought", "Borrowed", "Cleared", "Other")
+land$plot_ownership <- as.factor(ownship.type[land$plot_ownership])
+
+## site order
+site.org <- c("Ampahitra","Sahavazina","Mantadia","Zahamena")
+site.order <- c("1,New PA\nwith safeguard","2,New PA\nwithout safeguard","3,Established PA\n(Zahamena)","4,Established PA\n(Mantadia)")
+land$site <- factor(land$site, levels = site.org, labels = site.order)
+
+## Land data preparation for plotting
+land$exists <- 1
+
+## without plot_type grouping (but keeping site groupings) [requires 'dplyr' package, load if not loaded already by uncommenting the line below]
+# require(dplyr)
+
+land.tmp <- tbl_df(land %>% filter(!is.na(plot_type), 
+                                        !is.na(plot_ownership), 
+                                        plot_ownership!="Other"))
+land.tmp.sparse <- land.tmp %>%
+  xtabs(formula = sn ~ resp_id + plot_ownership + site) %>%
+  as.data.frame()
+
+land.tmp.sparse$Freq <- ifelse(land.tmp.sparse$Freq==0, 0, 1)
+
+land.all <- land.tmp.sparse %>%
+  filter(plot_ownership!="Other") %>%
+  group_by(resp_id) %>%
+  mutate(count1=n()) %>%
+  group_by(resp_id, site, plot_ownership) %>%
+  mutate(count2=sum(Freq), prop=count2/count1) %>%
+  group_by(site, plot_ownership) %>%
+  summarize(mean_prop=mean(prop), sd_prop=sd(prop), n=n()) %>%
+  mutate(CI=sd_prop/sqrt(n)*1.96, LL=mean_prop-CI,
+         UL=mean_prop+CI)
+
+land.all <- land.all %>%
+  group_by(site) %>%
+  mutate(sumprop=sum(mean_prop), mean_prop=mean_prop/sumprop,
+         LL=LL/sumprop, UL=UL/sumprop)
+
+land.all$Ownership <- factor(land.all$plot_ownership, 
+                             levels = c("Inherited", 
+                                        "Cleared", 
+                                        "Bought", 
+                                        "Rented", 
+                                        "Borrowed"))
+
+## Plotting land data, grouped by sites [requires 'ggplot2' package, load if not loaded already by uncommenting the line below]
+# require(ggplot2)
+land.plot <- land.all %>% filter(is.na(Ownership)==F) %>% 
+  ggplot(aes(site, mean_prop, fill=Ownership)) +
+  geom_bar(position=position_dodge(0.9), stat="identity") +
+  geom_errorbar(aes(ymin=LL, ymax=UL),
+                position=position_dodge(0.9), width=0.2) + 
+  theme_bw() + xlab(NULL) + ylab("Proportion of plots\n") + 
+  theme(text=element_text(size=20), 
+        axis.text.x=element_text(size=16, face = "bold", colour = "black"), 
+        axis.text.y=element_text(size=16,face= "bold", colour = "black"))
+
+land.plot <- land.plot + theme(legend.position="top", 
+                                     legend.title=element_blank(), 
+                                     legend.direction = "horizontal")
+
+## show as percentage
+land.plot <- land.plot + scale_y_continuous(labels = scales::percent) + 
+  ylab("Percentage of plots\n")
+
+land.plot
+
+##pdf output
+pdf("si_fig_s2.pdf", width=11, height=8)
+print(land.plot)
+dev.off()
+
+```
+
+## Opportunity cost estimates from the CE model (NPV)
+We use the data from the choice experiment - willing to accept (WTA) surveys (see <b id="n7">[Poudyal et al. (2016)](#r1)</b>; <b id="n8">[Rakotonarivo (2016)](#r2)</b>, to estimate the opportunity costs of forest use restriction, particularly conversion into swidden agriculture plots using multinomial logit model as outlined below. The key results presented in the paper include a violin plot for the estimated opportunity costs by study sites alongside the coefficient plot of the estimates. The steps and codes to produce both plots and to present them as a panel are also outlined below.
+
+```{r opp_cost, echo=FALSE}
+# CE WTA Data
+all.wta <- read.csv("wta_all.csv")
+
+## load necessary packages [if not already loaded]
+library(dplyr)
+library(gmnl)
+library(mlogit)
+library(msm)
+library(ggplot2)
+library(grid)
+library(scales)
+
+##sort out dummy coding etc.
+all.wta$asc <- with(all.wta, ifelse(payment==0 & instalment==0 & rice_proj==0 & teviala==0, 1, 0))
+all.wta$instalment2 <- with(all.wta, ifelse(instalment==2, 1, 0))
+all.wta$instalment3 <- with(all.wta, ifelse(instalment==3, 1, 0))
+all.wta$instalment <- as.factor(all.wta$instalment)
+all.wta$teviala <- as.factor(all.wta$teviala)
+all.wta$teviala1 <- ifelse(all.wta$teviala==1, 1, 0)
+all.wta$teviala2 <- ifelse(all.wta$teviala==2, 1, 0)
+all.wta$teviala2neg <- -all.wta$teviala2
+all.wta$payment <- all.wta$payment/1000000
+all.wta$negpayment <- -all.wta$payment
+
+## Existing PA vs New PA coding
+all.wta$park <- ifelse(all.wta$site=="Mantadia" | all.wta$site=="Zahamena", 1, 0)
+
+## combine other household data into WTA dataset [Note: run the 'poverty_pca' chunk above first to before executing the codes below]
+## rescale age to decades and distance to kilometers
+all.wta$age <- hhinfo.df[match(all.wta$resp_id, hhinfo.df$resp_id), ]$hh_age/10
+all.wta$dist <- hhinfo.df[match(all.wta$resp_id, hhinfo.df$resp_id), ]$dist2park/1000
+all.wta$gender <- hhinfo.df[match(all.wta$resp_id, hhinfo.df$resp_id), ]$resp_gender
+all.wta$lit <- hhinfo.df[match(all.wta$resp_id, hhinfo.df$resp_id), ]$resp_lit
+all.wta$tlu <- hhinfo.df[match(all.wta$resp_id, hhinfo.df$resp_id), ]$tlu
+all.wta$coba <- ifelse(hhinfo.df[match(all.wta$resp_id, hhinfo.df$resp_id), ]$coba_mem>0, 1, 0)
+all.wta$age <- ifelse(all.wta$age<0, NA, all.wta$age)
+all.wta$education <- hhinfo.df$education[match(all.wta$resp_id,hhinfo.df$resp_id)]
+
+## combile the PCA scores from poverty analysis above with WTA data
+all.wta$PC1 <- poverty[match(all.wta$resp_id, poverty$resp_id), ]$PC1
+all.wta$PC2 <- poverty[match(all.wta$resp_id, poverty$resp_id), ]$PC2
+
+## reshape the combined data for gmnl model [requires 'mlogit' package, load if not loaded already by uncommenting the line below]
+# require(mlogit)
+all.wta <- mlogit.data(all.wta, choice="choice", shape="long", id="resp_id",
+                       varying=c("asc", "payment", "negpayment", "instalment2", "instalment3", "rice_proj", "teviala"), alt.var="alternatives")
+
+all.wta$payment2 <- -all.wta$payment
+
+
+## running the constrained model [requires 'gmnl' package, load if not loaded already by uncommenting the line below]
+# require(gmnl)
+
+paper.model.cons <- gmnl(choice ~ payment + asc +instalment2 + instalment3 + rice_proj + teviala1 + teviala2neg |
+                          0 | 0 | site+dist+age+education+PC1+PC2-1 | 0,
+                      data=all.wta, panel=TRUE,
+                    ranp=c(asc="n",  instalment2="n", instalment3="n",
+                        rice_proj="n", teviala1="n", teviala2neg="cn"),
+                    mvar=list(rice_proj = c("siteMantadia", "siteSahavazina", "siteZahamena", "dist", "age", "education", "PC1", "PC2"),
+                          teviala1 = c("siteMantadia", "siteSahavazina", "siteZahamena", "dist", "age", "education", "PC1", "PC2"),
+                          teviala2neg = c("siteMantadia", "siteSahavazina", "siteZahamena", "dist", "age", "education", "PC1", "PC2")),
+                    R=100, method="bhhh",
+                    model="mixl")
+summary(paper.model.cons)
+
+## Ariary to USD conversion (see main text for details on exchange rates and data source)
+usd.conversion <- 1e6/2702
+formatterUSD <- function(x) {
+    x * usd.conversion
+}
+
+paper.model.cons.wta <- as.data.frame(wtp.gmnl(paper.model.cons, wrt="payment"))
+paper.model.cons.wta[ ,1:3] <- paper.model.cons.wta[ ,1:3]*usd.conversion
+paper.model.cons.wta[c(6, 23:30) , c(1, 3)] <- paper.model.cons.wta[c(6, 23:30) , c(1, 3)]*-1
+
+## [requires 'msm' package, load if not loaded already by uncommenting the line below]
+# require(msm)
+qtnorm.vec <- Vectorize(qtnorm, c("mean", "sd"))
+qtnorm.vec(0.975, paper.model.cons.wta[, 1], paper.model.cons.wta[,2], upper=0)
+
+paper.model.cons.wta$ll <- paper.model.cons.wta[, 1] - paper.model.cons.wta[,2]*1.96
+paper.model.cons.wta$ul <- paper.model.cons.wta[, 1] + paper.model.cons.wta[,2]*1.96
+paper.model.cons.wta$coefficient <- factor(c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "Teviala 2",
+                                      paste(rep(c("Rice project", "Teviala 1", "Teviala 2"), each=8),
+                                            c("Mantadia", "Sahavazina", "Zahamena", "Distance", "Age", "Education", "PC1", "PC2"),
+                                            sep="*"),
+                                      paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "Teviala 2"))),
+                                      levels=c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "Teviala 2",
+                                      paste(rep(c("Rice project", "Teviala 1", "Teviala 2"), each=8),
+                                           c("Mantadia", "Sahavazina", "Zahamena", "Distance", "Age", "Education", "PC1", "PC2"),
+                                            sep="*"),
+                                      paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "Teviala 2"))))
+
+paper.model.cons.wta$coefficient2 <- factor(c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard",
+                                     paste(rep(c("", "", ""), each=8),
+                                           c("Established PA\n(Mantadia)",
+                                             "New PA\nwithout safeguard",
+                                             "Established PA\n(Zahamena)",
+                                             "Distance from forest\n(km)", "Household age\n(decades)",
+                                             "Education", "Wealth axis 1", "Wealth axis 2"),
+                                            sep=""),
+                                      paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard"))),
+                                      levels=c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard",
+                                      paste(rep(c("", "", ""), each=8),
+                                            c("New PA\nwithout safeguard",
+                                          "Established PA\n(Zahamena)",
+                                          "Established PA\n(Mantadia)",
+                                          "Distance from forest\n(km)", "Household age\n(decades)",
+                                              "Education", "Wealth axis 1", "Wealth axis 2"),
+                                            sep=""),
+                                      paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard"))))
+paper.model.cons.wta$coefficient2 <- factor(paper.model.cons.wta$coefficient2, levels=rev(levels(paper.model.cons.wta$coefficient2)))
+
+
+## coefficient plot for CE WTA model [requires 'ggplot2' package, load if not loaded already by uncommenting the line below]
+# require(ggplot2)
+
+wta.coef.plot <- ggplot(paper.model.cons.wta[c(6, 23:30),], 
+                        aes(x=coefficient2, y=Estimate, ymin=ll, ymax=ul)) + 
+  geom_pointrange(size=0.25) + 
+  xlab(NULL) + ylab("Net opportunity cost ($)") + 
+  geom_hline(yintercept=0, lty=2)  + 
+  theme_bw() +  
+  theme(axis.text=element_text(size=14, colour = "black"),
+          axis.title=element_text(size=14, colour = "black")) + 
+  guides(colour=FALSE) + 
+  coord_flip() + 
+  annotate("text", x=9.3, y=-27000, label="b)", size=10)
+
+wta.coef.plot
+
+## get individual specific data
+all.wta.ind.cons <- paper.model.cons$mf[seq(from=1, to=nrow(paper.model.cons$mf), by=18), c("site", "dist", "age", "education",  "PC1", "PC2")]
+all.wta.ind.cons$id <- index(paper.model.cons$mf)$id[seq(from=1, to=nrow(paper.model.cons$mf), by=18)]
+all.wta.ind.cons$tlu <- hhinfo.df[match(all.wta.ind.cons$id, hhinfo.df$resp_id), ]$tlu
+all.wta.ind.cons$teviala1 <-  effect.gmnl(paper.model.cons, par="teviala1", effect="wtp", wrt="payment")$mean * usd.conversion
+all.wta.ind.cons$teviala2 <-  -effect.gmnl(paper.model.cons, par="teviala2neg", effect="wtp", wrt="payment")$mean * usd.conversion
+all.wta.ind.cons$rice_proj <-  effect.gmnl(paper.model.cons, par="rice_proj", effect="wtp", wrt="payment")$mean * usd.conversion
+
+## New site names to match with manuscript text and with other plots
+all.wta.ind.cons$site2 <- all.wta.ind.cons$site
+all.wta.ind.cons$site2 <- factor(all.wta.ind.cons$site,
+                                 levels=c("Ampahitra", "Sahavazina", "Zahamena",
+                                     "Mantadia"),
+                                 labels=c("1,New PA\nwith safeguard",
+                                          "2,New PA\nwithout safeguard",
+                                          "3,Established PA\n(Zahamena)",
+                                          "4,Established PA\n(Mantadia)"))
+all.wta.ind.cons$site2 <- factor(all.wta.ind.cons$site2, levels=rev(levels(all.wta.ind.cons$site2)))
+
+all.wta.ind.cons %>%
+    summarise(n=sum(!is.na(teviala2)),
+              perc=sum(teviala2 > -1.0)/n * 100,
+              median=median(teviala2, na.rm=TRUE),
+              lq=quantile(teviala2, probs=0.25),
+              uq=quantile(teviala2, probs=0.75))
+
+all.wta.ind.cons %>%
+    group_by(site) %>%
+    summarise(n=sum(!is.na(teviala2)),
+              perc=sum(teviala2 > -1.0)/n * 100,
+              median=median(teviala2, na.rm=TRUE),
+              lq=quantile(teviala2, probs=0.25),
+              uq=quantile(teviala2, probs=0.75))
+
+## save WTA model estimates as a data file (to use in further analysis below)
+write.csv(all.wta.ind.cons, "oc_all.csv", row.names=FALSE)
+
+## violin plot of the net opportunity cost estimates by site
+
+wta.violin.plot <- ggplot(all.wta.ind.cons, 
+                          aes(site2, teviala2, fill=site2, colour=site2)) +
+    geom_violin(alpha=0.1, scale="width") +
+    theme_bw() + ylab("Net opportunity cost ($)") + xlab(NULL) +
+    guides(fill=FALSE, colour=FALSE) +
+    coord_flip() +
+    theme(axis.text=element_text(size=14, colour = "black"),
+          axis.title=element_text(size=14, colour = "black")) + 
+  annotate("text", x=4.5, y=-29500, label="a)", size=10)
+
+wta.violin.plot
+
+## Combining two plots to create a panel (Figure 2)
+grid.draw(cbind(ggplotGrob(wta.violin.plot), 
+                ggplotGrob(wta.coef.plot), 
+                size="last"))
+
+## output as PDF
+pdf("fig2.pdf", width = 12, height = 6)
+grid.draw(cbind(ggplotGrob(wta.violin.plot), 
+                ggplotGrob(wta.coef.plot), 
+                size="last"))
+dev.off()
+
+```
+
+### Comparing annualised equivalent with total annual income
+We get opportunity cost estimates in the form of net present value (NPV) based on the willingness to accept (WTA) choice experiment data. In order to compare these estimates with the total annual household income, we get annualised equivalent of the opportunity costs, using a timeframe of 60 years and a discount rates of 0.001%, 2.5% and 5% (see main paper text, and SI for details).
+
+Since we only have total annual household income for a sub-sample of the households who were part of the second phase of the surveys (i.e., detailed agricultural and off-farm income survey), the total number of households for this analysis is 102 from three sites - Ampahitra (25), Zahamena (37), and Sahavazina (40). We use the total annual household income data, and the opportunity costs estimates from choice experiment modelling as outlined above for these households to compare annualised opportunity costs with annual household income as outlined below.
+
+```{r oc_hhinc_plot, echo=FALSE}
+# load and prepare data
+## data from agricultural survey households
+oc.df <- read.csv("agri_hhinc.csv")
+
+## convert total income in Ariary to USD
+oc.df$usd <- round(oc.df$tot_hh_inc/2702)
+
+## load CE WTA model estimates saved as data file above [i.e., 'oc_all.csv']
+wta.oc.est <- read.csv("oc_all.csv")
+
+## combine CE WTA model opportunity cost estimates for agricultural survey households
+## converting original output to positive values to use the magnitude of opportunity costs
+oc.df$opp_cost_est <- wta.oc.est[match(oc.df$resp_id, wta.oc.est$id), ]$teviala2*-1
+
+## function for calculating EAA factor (this when multiplied by the NPV OC estimate gives the annualised equivalent) [Load this function now if not already loaded]
+eaa <- function(t, r) {r/(1-(1+r)^-t)}
+
+## add a new column with EAA value for current year for 60 year timeframe and discount rate ~ 0%
 oc.df$eaa60yr0pc <- oc.df$opp_cost_est*eaa(60,0.00001)
-##get eaa60yr0pc as proportion of total hh inc
+## get eaa60yr0pc as proportion of total hh inc
 oc.df$prop1 <- oc.df$eaa60yr0pc/oc.df$usd
 
-##add another column with EAA value for current year for 60 year timeframe and discount rate of 2.5%
+## add another column with EAA value for current year for 60 year timeframe and discount rate of 2.5%
 oc.df$eaa60yr2p5pc <- oc.df$opp_cost_est*eaa(60,0.025)
-##get eaa60yr2p5pc as proportion of total hh inc
+## get eaa60yr2p5pc as proportion of total hh inc
 oc.df$prop2 <- oc.df$eaa60yr2p5pc/oc.df$usd
 
-##add another column with EAA value for current year for 60 year timeframe and discount rate of 5% 
+## add another column with EAA value for current year for 60 year timeframe and discount rate of 5% 
 oc.df$eaa60yr5pc <- oc.df$opp_cost_est*eaa(60,0.05)
-##get eaa60yr5pc as proportion of total hh inc
+## get eaa60yr5pc as proportion of total hh inc
 oc.df$prop3 <- oc.df$eaa60yr5pc/oc.df$usd
 
-##subset data columns to be used in plots
+## subset data columns to be used in plots
 oc.df.sub1 <- subset(oc.df,
                     select = c("usd","prop1","prop2","prop3"))
 
-##melt subsetted data for easy plotting against annual household income (usd)
+## melt subsetted data for easy plotting against annual household income (usd)
 oc.df.sub1.melt <- melt(oc.df.sub1, id="usd")
-```
 
-#### Plotting annualised equivalent of opportunity costs against total annual household income
-
-```{r oc_hhinc_plot, echo=FALSE}
+# Plotting annualised equivalent of opportunity costs against total annual household income
 oc_hhinc_plot <- ggplot(oc.df.sub1.melt, aes(x=usd, y=value,
                                     colour=variable)) +
             geom_point(alpha=0.9) +
@@ -101,105 +537,15 @@ oc_hhinc_plot <- oc_hhinc_plot + geom_vline(xintercept = 233,
            label="Median hh inc (233 US$)", 
            angle=90,
            size=6)
-##view plot
+## view plot
 oc_hhinc_plot
 
-##output plot as pdf
-pdf("oc_hhinc_plot.pdf", width = 11, height = 8)
+## output plot as pdf
+pdf("fig3.pdf", width = 11, height = 8)
 print(oc_hhinc_plot)
 dev.off()
 
 ```
-
-### Matrix plot - estimating the percentage (and number) of households with opportunity costs higher than US$120 for all combinations of timeframe and discount rates
-The main idea here is to show the percentage (and/or number) of households with annualised equivalent opportunity costs above a specific cut-off within CAZ based on our assumptions on the timeframe and discount rates, and estimated population. In the plot below, we use USD 120 as the cut-off figure for the opportunity cost estimates (annualised equivalent), with shades in the plot showing the percentage of households with estimated opportunity costs (annualised) higher than USD 120 per year, and selected quadrants annotated with total number of households with opportunity costs higher than USD 120 for those combinations of timeframe and discount rates. The data used for this comes from the two CAZ sites - site 1 (Ampahitra) (102) and site 2 (Sahavazina) (94) - so a total sample size of 196 households.
-
-#### Data preparation
-
-```{r matrix_plot_data, echo=FALSE}
-#data preparation
-##read data - opportunity cost estimates (all sites)
-oppcost.df <- read.csv("oc_all.csv")
-
-##convert 'teviala2' figures to positive values (opportunity costs)
-oppcost.df$opp_cost_est <- -1*oppcost.df$teviala2
-
-##subset CAZ sites data (Ampahitra and Sahavazina)
-oc_caz.df <- subset(oppcost.df, site=="Ampahitra" | site=="Sahavazina")
-
-#sequencing the combination of timeframe and discount rates
-disc.years <- seq(20, 60, by=5)
-disc.rates <- seq(0.001, 5.5, by=0.5)/100
-disc.rates <- seq(2.5, 7.5, by=0.5)/100
-
-matrix.eaa <- sapply(as.list(disc.years), function(x) sapply(as.list(disc.rates), function(y) eaa(x, y)))
-
-##function to calculate proportion of households greater than critical value
-prop.household <- function(x, val=120) {
-    tmp <- na.omit(x)
-    sum(tmp > val)/length(tmp)
-}
-
-## this will give the matrix as percentage of households above the threshold within our sample
-matrix.prop <- matrix(sapply(matrix.eaa, function(x) prop.household(x * oc_caz.df$opp_cost_est)), ncol=length(disc.years))*100
-## this will give the matrix as number of households above the threshold extrapolated to the whole of CAZ population - rounded to nearest integer
-matrix.prop1 <- round(matrix(sapply(matrix.eaa, function(x) prop.household(x * oc_caz.df$opp_cost_est)), ncol=length(disc.years))*8197)
-```
-
-#### Plotting
-
-```{r matrix_plot, echo=FALSE}
-require(latticeExtra)
-x.scale <- list(at=seq(0,5,0.5), cex=1.2)
-x.scale <- list(at=seq(2.5,7.5,0.5), cex=1.2)
-y.scale <- list(at=seq(20,60,5), cex=1.2)
-
-mplot1<- levelplot(matrix.prop, 
-          row.values=disc.rates*100, 
-          column.values=disc.years, 
-          aspect="full",
-          scales=list(x=x.scale, y=y.scale),
-          main=list("Households with estimated opportunity costs > US $120 per year"),
-          xlab=list('Discount rate (%)',cex=1.8), 
-          ylab=list('Time frame (years)', cex=1.8),
-          pretty=TRUE,
-          col.regions = grey(100:0/100),
-          colorkey=list(labels=list(cex=1.2)),
-          legend=list(top=list(fun=grid::textGrob("Percent",y=0,x=1.09))))
-
-## annotating the selected quadrants with the number of households for the timeframe-discount rate combination
-mplot1 <- mplot1 + layer(panel.text(5, 59, '3555', col="red")) + 
-  layer(panel.text(2.5, 59, '2760', col="red")) + 
-  layer(panel.text(0,59, '1673', col="red")) + 
-  layer(panel.text(5, 40, '3680', col="red")) + 
-  layer(panel.text(2.5, 40, '3137', col="red")) + 
-  layer(panel.text(0, 40, '2467', col="red")) + 
-  layer(panel.text(0, 21, '3555', col="red")) + 
-  layer(panel.text(2.5, 21, '3848', col="red")) +
-  layer(panel.text(5, 21, '4140', col="red"))
-
-## annotating the selected quadrants with the number of households for the timeframe-discount rate combination (for 2.5 to 7.5% dr)
-mplot1 <- mplot1 + layer(panel.text(2.5, 59, '2760', col="red")) + 
-  layer(panel.text(5, 59, '3555', col="red")) + 
-  layer(panel.text(7.5,59, '4098', col="red")) + 
-  layer(panel.text(2.5, 40, '3137', col="red")) + 
-  layer(panel.text(5, 40, '3680', col="red")) + 
-  layer(panel.text(7.5, 40, '4098', col="red")) + 
-  layer(panel.text(2.5, 21, '3848', col="red")) + 
-  layer(panel.text(5, 21, '4140', col="red")) +
-  layer(panel.text(7.55, 21, '4391', col="red"))
-
-
-##view plot
-mplot1
-
-##output plot as pdf
-pdf("matrix_plot.pdf", width = 8, height = 8)
-print(mplot1)
-dev.off()
-
-```
-
 
 ## Panel with carbon value in CAZ, opportunity costs, compensation and number of households affected
 Using the key figures from our own estimation and existing data from other sources, we highlight the gap between potential value of carbon sequestered in CAZ protected area, estimated opportunity costs and actual compensation provided, including the recipients' valuation of the compensation. Key figures used are described below:
@@ -210,7 +556,7 @@ Using the key figures from our own estimation and existing data from other sourc
 
 - *cv_com* (=**US $79**): Average valuation of the compensation provided to the households in 2015 US$ (estimated from contingent valuation survey with 62 PAP households in *Ampahitra*)
 
-- *caz_tot_hh* (=**3555**): Total number of households estimated to be inhabiting in/around CAZ protected area (2km buffer)
+- *caz_tot_hh* (=**9837**): Total number of households estimated to be inhabiting in/around CAZ protected area (2km buffer)
 
 - *sg_ided_hh* (=**2500**): Total number of households originally identified as PAPs <sup id="n2">[2](#f2)</sup>
 
@@ -220,10 +566,18 @@ Using the key figures from our own estimation and existing data from other sourc
 
 - *carbon* (=**110000000**): Total value of carbon sequestered in CAZ protected area due to avoided deforestation (for ten years), equates to around one million tonnes of CO<sub>2</sub> sequestered per year <sup id="n4">[4](#f4)</sup>, and average social cost of per tonne of CO<sub>2</sub> for 2015 at 5% discount rate (USD 11) <sup id="n5">[5](#f5)</sup>
 
-
 ```{r gap_plot, echo=FALSE}
-#initial data
+## initial data
 comp.df <- read.csv("sg_comp.csv")
+
+## extract CE WTA opportunity costs estimates for CAZ sites [Note: requires 'oc_all.csv' loaded as 'wta.oc.est' in 'oc_hhinc_data' chunk above]
+oc_caz.df <- subset(wta.oc.est, site=="Ampahitra" | site=="Sahavazina")
+
+## converting original output to positive values to use the magnitude of opportunity costs
+oc_caz.df$opp_cost_est <- oc_caz.df$teviala2*-1
+
+##function for extracting total number of households with NPV OC greater than a given threshold in CAZ [Load the function below now if not already loaded]
+pap_hh <- function(i, c) {round((sum(c>i)/196)*9837)}
 
 #compute and add more data columns
 ##number of potential pap households for 2x median hh income as the threshold (i.e., hhs with NPV OC > 2x median annual hh income)
@@ -236,13 +590,13 @@ comp.df$pap_3xinc <- pap_hh(3*comp.df$med_hh_inc, oc_caz.df$opp_cost_est)
 comp.df$pap_4xinc <- pap_hh(4*comp.df$med_hh_inc, oc_caz.df$opp_cost_est)
 
 ##value of carbon per household in the CAZ
-comp.df$carbon_phh <- round(comp.df$carbon/8197)
+comp.df$carbon_phh <- round(comp.df$carbon/comp.df$caz_tot_hh)
 
 #reshape data for easy plotting
 comp.df.melt <- melt(comp.df, id="sn")
 
 ##plot with opportunity costs, compensation and valuation of compensation provided - without carbon value (top panel)
-comp.plot1 <- ggplot(comp.df.melt[c(1,4,5),],
+comp.plot1 <- ggplot(comp.df.melt[c(1,3,4),],
                      aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","orange")) + 
@@ -263,7 +617,7 @@ comp.plot1
 
 
 #plot with carbon value, opportunity costs, compensation and valuation of compensation provided (for inset on top panel)
-comp.plot1i <- ggplot(comp.df.melt[c(17,1,4,5),], 
+comp.plot1i <- ggplot(comp.df.melt[c(14,1,3,4),], 
                      aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
   scale_fill_manual(values = c("orange","royalblue","orange","darkgreen")) + 
@@ -283,39 +637,10 @@ comp.plot1i <- comp.plot1i +
 
 ##view plot
 comp.plot1i
-require(data.table)
-pap1 <- data.table(lab=c("pap_hh", "sg_ided","comp_hh"),
-                   pap=c(5228,0,0))
-pap2 <- data.table(lab=c("pap_hh", "sg_ided", "comp_hh"),
-                   pap=c(4935,0,0))
-pap3 <- data.table(lab=c("pap_hh", "sg_ided", "comp_hh"),
-                   pap=c(4600,2500,0))
 
-p <- ggplot(NULL, aes(lab, pap)) + 
-  geom_col(aes(fill = "pap3"), data = pap3, alpha = 1, width = 0.5) +
-  geom_col(aes(fill = "pap2"), data = pap2, alpha = 0.9, width = 0.5) + 
-  geom_col(aes(fill = "pap1"), data = pap1, alpha = 0.6, width = 0.5) + 
-  theme_bw() + 
-  scale_fill_manual(values = c("orange","orange","royalblue")) + 
-  xlab("") + ylab("Number of households") + 
-  scale_y_continuous(breaks = seq(0, 6000, 1000)) + 
-  scale_x_discrete(limits = c("pap_hh","sg_ided","comp_hh",""),
-                   labels = c("HHs with NPV of\nopportunity costs >\n2-4x annual income",
-                              "HHs identified\nto receive\ncompensation",
-                              "HHs fully\ncompensated","")) + 
-  theme(legend.position = "none",
-        axis.text = element_text(size = 13, colour = "black"),
-        axis.title.y = element_text(size = 15))
-p <- p + annotate("text", x = 0.5, y = 5300, label = "b)", size = 9) + 
-  annotate("text", x = 1.3, y = 5280, label = "5228  (2x annual income)") + 
-  annotate("text", x = 1.3, y = 5000, label = "4935  (3x annual income)") + 
-  annotate("text", x = 1.3, y = 4670, label = "4600  (4x annual income)") + 
-  annotate("text", x = 2, y = 2600, label = "2500") + 
-  annotate("text", x = 3, y = 0, label = "0")
-p
 
 ## plot with eligible households, households identified as PAPs, and those fully compensated (bottom panel)
-hh.plot1 <- ggplot(comp.df.melt[c(14:16,8,11),], 
+hh.plot1 <- ggplot(comp.df.melt[c(11:13,7,9),], 
                     aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + 
   theme_bw() + 
@@ -334,7 +659,7 @@ hh.plot1 <- ggplot(comp.df.melt[c(14:16,8,11),],
 
 hh.plot1 <- hh.plot1 + 
   geom_text(position = position_dodge(0.9), vjust=-0.25) + 
-  annotate("text", x = 0.5, y = 5300, label = "b)", size = 9)
+  annotate("text", x = 0.5, y = 6400, label = "b)", size = 9)
 
 ##view plot
 hh.plot1
@@ -346,21 +671,8 @@ vp1 <- viewport(width = 0.55,
                 x = 0.71,
                 y = 0.81)
 
-##pdf output with inset (lower panel with overlapping first column)
-pdf("occvhh_panel_carbon_inset1.pdf", width = 11, height = 10) 
-
-pushViewport(viewport(layout = grid.layout(2, 1)))
-
-vplayout <- function(x, y) 
-  viewport(layout.pos.row = x, layout.pos.col = y)
-
-print(comp.plot1, vp = vplayout(1, 1)) 
-print(p, vp = vplayout(2, 1))
-print(comp.plot1i, vp = vp1)
-dev.off()
-
-##pdf output with inset (lower panel without overlap)
-pdf("occvhh_panel_carbon_inset2.pdf", width = 11, height = 10) 
+##pdf output with inset
+pdf("fig4.pdf", width = 11, height = 10) 
 
 pushViewport(viewport(layout = grid.layout(2, 1)))
 
@@ -375,71 +687,95 @@ dev.off()
 ```
 
 ##Comparing opportunity costs estimates with contingent valuation data for the safeguard followup sample
-This analysis is based on the opportunity costs estimated for the 62 households in the safeguard followup sample based on their socio-economic characteristics and their distance to CAZ boundary (determinants in the CE model). 
-[**Note**: education data is missing for part of the sample at present so this estimation uses *Education*=0 (i.e., assuming all have low level of education). This will be rectified once the missing education data is collected in January 2017.]
+This analysis is based on the opportunity costs estimated for the 62 households in the safeguard followup sample based on their socio-economic characteristics and their distance to CAZ boundary (determinants in the CE model).
 
-```{r sgfollow_data, echo=FALSE}
-occv.df <- read.csv("sgf_oc_cv.csv")
+```{r sgfollow_oc, echo=FALSE}
+# load HH info and wealth indicator data for safeguard followup HHs
+sgf.df <- read.csv("sgfollowup.csv")
+str(sgf.df)
 
-#change sign of oc.cens
-occv.df$ocest <- -1*occv.df$oc.cens
+## prepare data to add PCA scores
+### change column names for factor variables to match with 'poverty.pca'
+colnames(sgf.df)[c(8,11:13)] <- c("as.ordered.house_qual.",
+                                  "as.ordered.paddy.",
+                                  "as.ordered.access_light.",
+                                  "as.ordered.mplayer.")
+
+## add PC scores to the data frame [Note: this requires 'poverty_pca' chunk to be run first]
+sgf.df <- cbind(sgf.df, factor.scores(sgf.df[,7:13], poverty.pca)$scores)
+
+## prepare 'sgf.df' dataframe above to estimate opportunity cost using the coefficients from CE WTA model estimated earlier
+### rescale data as in main analysis
+sgf.df$hh_age <- sgf.df$hh_age/10
+sgf.df$dist2park <- sgf.df$dist2park/1000
+
+## get the beta and lambda coefficients for the HHs
+sgf.df$x.beta <- with(sgf.df, (coef(paper.model.cons)["teviala2neg"] +
+                              coef(paper.model.cons)["teviala2neg.dist"]*dist2park +
+                              coef(paper.model.cons)["teviala2neg.age"]*hh_age +
+                              coef(paper.model.cons)["teviala2neg.PC1"]*PC1 +
+                              coef(paper.model.cons)["teviala2neg.PC2"]*PC2 + 
+                        coef(paper.model.cons)["teviala2neg.education"]*education))
+
+sgf.df$x.lambda <- with(sgf.df, 
+                        dnorm(x.beta/coef(paper.model.cons)["sd.teviala2neg"])/
+                            pnorm(x.beta/coef(paper.model.cons)["sd.teviala2neg"]))
+
+## estimate the WTA for the HHs
+sgf.df$oc.cens <- -with(sgf.df, 
+                  pnorm(x.beta/coef(paper.model.cons)["sd.teviala2neg"])*
+                    (x.beta + coef(paper.model.cons)["sd.teviala2neg"]*x.lambda))/
+                    coef(paper.model.cons)["payment"]*usd.conversion
+
+#change sign of oc.cens to positive for plotting the magnitude
+sgf.df$ocest <- -1*sgf.df$oc.cens
 #get cv value as proportion of opportunty costs
-occv.df$cvpcoc <- occv.df$cv_usd/occv.df$ocest
+sgf.df$cvpcoc <- sgf.df$cv_usd/sgf.df$ocest
 
 #plot oc vs cv
-occv.plot <- ggplot(occv.df, aes(x=ocest, y=cvpcoc)) + 
+occv.plot <- ggplot(sgf.df, aes(x=ocest, y=cvpcoc)) + 
   geom_point() + theme_bw() + 
-  #scale_size("Distance to PA boundary (km) \n(negative values=inside PA)",
-             #range = c(0.5,5),
-             #breaks=c(-3,-2,-1,0,1,2,3)) +
   coord_cartesian(ylim = c(-.02,.5)) + 
   scale_y_continuous(labels = scales::percent) + 
   xlab("NPV of opportunity costs estimate (US$)") + 
   ylab("Respondent's valuation of the compensation project as % of opportunity costs") +  
   geom_smooth() + 
   theme(axis.title = element_text(size = 14),
-        axis.text = element_text(size = 12))#,
-        #legend.position=c(.85,.8),
-        #legend.background = element_rect(colour = "black"))
+        axis.text = element_text(size = 12))
 
 ##view plot
 occv.plot
 
 ##plot output as pdf
-pdf("occv_plot.pdf", width = 11, height = 8)
+pdf("fig5.pdf", width = 11, height = 8)
 print(occv.plot)
 dev.off()
 
 ```
 
-
-
 ## CAZ population estimates
-We have access to two spatial datasets on population in Madagascar: (1) Fokontany-level (Fkt2010) data, and (2) Landscan 2007 (LS07) dataset. We used both population datasets to run the EcoEngine population algorithm in WaterWorld <sup id="n6">[6](#f6)</sup> and masked to the shapefile of CAZ with the 2km buffer to get population distribution within the area of interest. To check the fit of population distribution from these two datasets, we used P4ges project social sites as areas of interest and calculated the sum of population in each area, and compared to the data collected from the field survey.
+We have access to two spatial datasets on population in Madagascar: (1) Fokontany-level (Fkt2010) data, and (2) Landscan 2007 (LS07) dataset. We used both population datasets to run the EcoEngine population algorithm in WaterWorld <sup id="n6">[6](#f6)</sup> and masked to the shapefile of CAZ with the 2km buffer to get population distribution within the area of interest. To check the fit of population distribution from these two datasets, we used P4ges project social sites as areas of interest and calculated the sum of population in each area, and compared to the data collected from the field survey. The steps involved, including dataset and codes, are outlined below.
 
-### Prepare data
-```{r cazpop_data, echo=FALSE}
-#load csv as a df
+```{r cazpop, echo=FALSE}
+# Prepare data
+## load dataset
 caz.pop <- read.csv("caz_pop.csv")
-#reshape data for easy analysis
-cazpop.melt <- melt(caz.pop, id.vars = c("aois", "p4ges"))
-```
 
-### Fit linear models to check the best fit set
-```{r pop_fits, echo=FALSE}
-#LS07 vs P4ges
+## reshape data for easy analysis
+cazpop.melt <- melt(caz.pop, id.vars = c("aois", "p4ges"))
+
+# Fit linear models to check the best fit set
+## LS07 vs P4ges
 fit1 <- lm(formula = ls07~p4ges, data = caz.pop)
 summary(fit1)
-#Fokontany-level data (2010) vs P4ges
+
+## Fokontany-level data (2010) vs P4ges
 fit2 <- lm(formula = fkt2010~p4ges, data = caz.pop)
 summary(fit2)
 
-```
+# Plot both datasets against P4ges with fitted line
+## We use labelling to show the adjusted R^2 from the models above
 
-### Plot both datasets against P4ges with fitted line
-I've just used the labelling to show the adjusted R<sup>2</sup> from the models above.
-
-```{r plot, echo=FALSE}
 cazpop.plot <- ggplot(cazpop.melt, aes(x=p4ges, y=value, colour=variable)) + 
   geom_point() +
   geom_smooth(method="lm", se = FALSE) + 
@@ -463,133 +799,31 @@ cazpop.plot <- ggplot(cazpop.melt, aes(x=p4ges, y=value, colour=variable)) +
         axis.line.x = element_line(colour = "black"),
         axis.line.y = element_line(colour = "black"))
 
-pdf("caz_pop.pdf", width = 8, height = 8)
+## view plot
+cazpop.plot
+
+## plot output as pdf
+pdf("si_fig_s5.pdf", width = 8, height = 8)
 print(cazpop.plot)
 dev.off()
 
 ```
 
-## Supplementary plot on land access
-This uses data on the number of each type of plots that households have access to, and how they gained access to those plots in order to get a summary on how households in each of our study sites gain access to the land.
-
-### Land Data
-```{r land_data, echo=FALSE}
-##land holding
-cland <- read.csv("land.csv")
-##missing
-cland[cland==-98] <- NA
-str(cland)
-##subsetting required variables
-land.df <- subset(cland, select = c(1:4,6,8,10,13:14,17))
-str(land.df)
-
-##defining land type
-land.type <- c("Tavy", "Tavy", "Tanimbary", "Tanimboly", "Other")
-land.df$plot_type <- as.factor(land.type[land.df$plot_type])
-
-##defining land ownership
-ownship.type <- c("Inherited", "Rented", "Bought", "Borrowed", "Cleared", "Other")
-land.df$plot_ownership <- as.factor(ownship.type[land.df$plot_ownership])
-
-##site order
-site.org <- c("Ampahitra","Sahavazina","Amporoforo","Mantadia","Zahamena")
-site.order <- c("1,REDD+ project\nwith safeguard","2,REDD+ project\nwithout safeguard","Amporoforo (Gradient)","3,Established PA\n(Zahamena)","4,Established PA\n(Mantadia)")
-land.df$site <- factor(land.df$site, levels = site.org, labels = site.order)
-```
-
-### Land data preparation for plotting
-```{r land_dataprep, echo=FALSE, include=FALSE}
-land.df$exists <- 1
-
-land.test <- tbl_df(land.df %>% filter(!is.na(plot_type), plot_type!="Other", plot_ownership!="Other"))
-
-land.df.sparse <- land.test %>%
-    xtabs(formula = sn ~ resp_id + plot_type + plot_ownership + site) %>%
-        as.data.frame()
-
-land.df.sparse$Freq <- ifelse(land.df.sparse$Freq==0, 0, 1)
-
-land.df.summary <- land.df.sparse %>%
-    filter(!is.na(plot_type), plot_type!="Other",
-                                   plot_ownership!="Other") %>%
-    group_by(resp_id) %>%
-        mutate(count1=n()) %>%
-            group_by(resp_id, site, plot_type, plot_ownership) %>%
-                mutate(count2=sum(Freq), prop=count2/count1) %>%
-                    group_by(site, plot_type, plot_ownership) %>%
-                        summarize(mean_prop=mean(prop), sd_prop=sd(prop), n=n()) %>%
-                        mutate(CI=sd_prop/sqrt(n)*1.96, LL=mean_prop-CI,
-                               UL=mean_prop+CI)
-
-#without plot_type grouping (but keeping site groupings)
-land.test2 <- tbl_df(land.df %>% filter(!is.na(plot_type), 
-                                        !is.na(plot_ownership), 
-                                        plot_ownership!="Other"))
-land.test2.sparse <- land.test2 %>%
-    xtabs(formula = sn ~ resp_id + plot_ownership + site) %>%
-        as.data.frame()
-
-land.test2.sparse$Freq <- ifelse(land.test2.sparse$Freq==0, 0, 1)
-
-land.all <- land.test2.sparse %>%
-    filter(plot_ownership!="Other") %>%
-    group_by(resp_id) %>%
-        mutate(count1=n()) %>%
-            group_by(resp_id, site, plot_ownership) %>%
-                mutate(count2=sum(Freq), prop=count2/count1) %>%
-                    group_by(site, plot_ownership) %>%
-                        summarize(mean_prop=mean(prop), sd_prop=sd(prop), n=n()) %>%
-                        mutate(CI=sd_prop/sqrt(n)*1.96, LL=mean_prop-CI,
-                               UL=mean_prop+CI)
-
-land.all <- land.all %>%
-    group_by(site) %>%
-        mutate(sumprop=sum(mean_prop), mean_prop=mean_prop/sumprop,
-               LL=LL/sumprop, UL=UL/sumprop)
-
-land.all$Ownership <- factor(land.all$plot_ownership,
-                             levels = c("Inherited","Cleared","Bought","Rented","Borrowed"))
-
-```
-
-### Plotting land data
-
-```{r land_access, echo=FALSE}
-##grouped by sites (ONLY CE SITES)
-land.plot.ce <- land.all %>% filter(is.na(Ownership)==F, site!="Amporoforo (Gradient)") %>% 
-  ggplot(aes(site, mean_prop, fill=Ownership)) +
-    geom_bar(position=position_dodge(0.9), stat="identity") +
-        geom_errorbar(aes(ymin=LL, ymax=UL),
-                position=position_dodge(0.9), width=0.2) + 
-        theme_bw() + xlab(NULL) + ylab("Proportion of plots\n") + 
-  theme(text=element_text(size=20), 
-                axis.text.x=element_text(size=16, face = "bold", colour = "black"), 
-                axis.text.y=element_text(size=16,face= "bold", colour = "black"))
-  
-land.plot.ce <- land.plot.ce + theme(legend.position="top", 
-                    legend.title=element_blank(), 
-                    legend.direction = "horizontal")
-
-##as percentage
-land.plot.ce <- land.plot.ce + scale_y_continuous(labels = scales::percent) + 
-  ylab("Percentage of plots\n")
-
-##pdf output
-pdf("land_plot_ce.pdf", width=11, height=8)
-print(land.plot.ce)
-dev.off()
-
-```
 ---
-### Notes:
-<b id="f1">1</b> Source: MEEF/SAPM/CI (2013) *Etude de faisabilité des Sous-Projets de Compensation des Personnes Affectées par le Projet, Nouvelle Aire Protégée du Corridor Ankeniheny-Zahamena (NAP CAZ)*, Programme Environmental III, Madagascar. [↩︎](#n1)
+### Notes and References:
 
-<b id="f2">2</b> Source: World Bank (2016) *Madagascar - Third Environmental Program Support Project*, W.B. Group, World Bank, Washington, D.C. Available at: https://goo.gl/I7VP6q, accessed on 25-10-2016. [↩︎](#n2)
+<b id="f1">1.</b> Source: MEEF/SAPM/CI (2013) *Etude de faisabilité des Sous-Projets de Compensation des Personnes Affectées par le Projet, Nouvelle Aire Protégée du Corridor Ankeniheny-Zahamena (NAP CAZ)*, Programme Environmental III, Madagascar. [↩︎](#n1)
 
-<b id="f3">3</b> Source: *ibid* [↩︎](#n3)
+<b id="f2">2.</b> Source: World Bank (2016) *Madagascar - Third Environmental Program Support Project*, W.B. Group, World Bank, Washington, D.C. Available at: https://goo.gl/I7VP6q, accessed on 25-10-2016. [↩︎](#n2)
 
-<b id="f4">4</b> Source: Rainforest Alliance (2013) *Reduced Emissions from Deforesation in the Ankeniheny-Zahamena Corridor, Madagascar - Validation Report: VCS Version 3*. Available at: https://goo.gl/Yj0gJV, accessed on 2016-12-06. [↩︎](#n4)
+<b id="f3">3.</b> Source: *ibid* [↩︎](#n3)
 
-<b id="f5">5</b> Source: US EPA - "Social Cost of Carbon: Estimating the Benefits of Reducing Greenhouse Gas Emissions"  https://www.epa.gov/climatechange/social-cost-carbon, accessed on 20 Dec 2016. [↩︎](#n5)
+<b id="f4">4.</b> Source: Rainforest Alliance (2013) *Reduced Emissions from Deforesation in the Ankeniheny-Zahamena Corridor, Madagascar - Validation Report: VCS Version 3*. Available at: https://goo.gl/Yj0gJV, accessed on 2016-12-06. [↩︎](#n4)
 
-<b id="f6">6</b> http://www.policysupport.org/waterworld [↩︎](#n6)
+<b id="f5">5.</b> Source: US EPA - "Social Cost of Carbon: Estimating the Benefits of Reducing Greenhouse Gas Emissions"  https://www.epa.gov/climatechange/social-cost-carbon, accessed on 20 Dec 2016. [↩︎](#n5)
+
+<b id="f6">6.</b> http://www.policysupport.org/waterworld [↩︎](#n6)
+
+<b id="r1">7.</b> Poudyal, M., Rakotonarivo, O.S., Rasoamanana, A., Mandimbiniaina, R., Spener, N., Hockley, N., and Jones, J.P.G. 2016. "Household survey and discrete choice experiment for investigating the opportunity cost of conservation restrictions in eastern Madagascar." [Data Collection]. Colchester, Essex: UK Data Archive. doi: https://dx.doi.org/10.5255/UKDA-SN-852435. [↩︎](#n7)
+
+<b id="r2">8.</b> Rakotonarivo, O.S. 2016. "Improving the choice experiment method in assessing the local welfare impacts of forest conservation in low-income countries:  Empirical Evidence from Madagascar." PhD Thesis, Bangor University and University of Copenhagen. [↩︎](#n8)

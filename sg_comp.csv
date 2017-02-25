@@ -1,2 +1,2 @@
-sn,npv_oc_all,npv_oc_caz,sg_com_min,sg_com_max,cv_com,med_hh_inc,caz_tot_hh,sg_ided_hh,sg_hh,uncomp_hh,full_comp_hh,carbon,oc
-1,2375,1568,101,173,79,233,8197,2500,1835,1012,0,110000000,10000000
+sn,npv_oc_all,sg_com_min,sg_com_max,cv_com,med_hh_inc,caz_tot_hh,sg_ided_hh,uncomp_hh,full_comp_hh,carbon
+1,2375,101,173,79,233,9837,2500,1012,0,110000000
