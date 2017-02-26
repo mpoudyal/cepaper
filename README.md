@@ -3,3 +3,6 @@ RStudio project for all the analyses done for the paper **Who bears the cost of 
 
 Latest draft of the paper here:
 https://docs.google.com/a/celp.org.uk/document/d/1I9gVMsR-ZKr4BbS3aCd9tUKxVW89qRO577pwBBmZmgM/edit?usp=sharing_eixpa_nl&ts=58498f70
+
+Latest draft of Supporting Information here:
+https://docs.google.com/document/d/1sjEQK5jnODydtp4JiM1nPg7sE0r6RR3XtuqADdEnZHc/edit#

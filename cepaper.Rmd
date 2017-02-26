@@ -595,7 +595,32 @@ comp.df$carbon_phh <- round(comp.df$carbon/comp.df$caz_tot_hh)
 #reshape data for easy plotting
 comp.df.melt <- melt(comp.df, id="sn")
 
-##plot with opportunity costs, compensation and valuation of compensation provided - without carbon value (top panel)
+## plot with eligible households, households identified as PAPs, and those fully compensated (top panel)
+hh.plot1 <- ggplot(comp.df.melt[c(11:13,7,9),], 
+                    aes(variable, value, fill=variable, label=value)) + 
+  geom_col(width = 0.5) + 
+  theme_bw() + 
+  scale_fill_manual(values = c("royalblue","orange","orange","orange","orange")) + 
+  theme(legend.position = "none",
+        axis.text = element_text(size = 13, colour = "black"),
+        axis.title.y = element_text(size = 16)) + 
+  xlab("") + ylab("Number of HHs") + 
+  scale_y_continuous(breaks = seq(0, 6000, 1000)) +
+  scale_x_discrete(limits = c("pap_2xinc","pap_3xinc","pap_4xinc","sg_ided_hh","full_comp_hh"),
+                   labels = c("HHs with NPV of\nopportunity costs >\n2x annual income",
+                              "HHs with NPV of\nopportunity costs >\n3x annual income",
+                              "HHs with NPV of\nopportunity costs >\n4x annual income",
+                              "HHs identified\nto receive\ncompensation",
+                              "HHs fully\ncompensated"))
+
+hh.plot1 <- hh.plot1 + 
+  geom_text(position = position_dodge(0.9), vjust=-0.25) + 
+  annotate("text", x = 0.5, y = 6400, label = "a)", size = 9)
+
+##view plot
+hh.plot1
+
+##plot with opportunity costs, compensation and valuation of compensation provided - without carbon value (bottom panel)
 comp.plot1 <- ggplot(comp.df.melt[c(1,3,4),],
                      aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
@@ -610,13 +635,13 @@ comp.plot1 <- ggplot(comp.df.melt[c(1,3,4),],
                               "Average value\nof compensation\nper HH",""))
 comp.plot1 <- comp.plot1 + 
  geom_text(position = position_dodge(0.9), vjust=-0.25) + 
-  annotate("text", x = 0.5, y = 2400, label = "a)", size = 9)
+  annotate("text", x = 0.5, y = 2400, label = "b)", size = 9)
 
 ##view plot
 comp.plot1
 
 
-#plot with carbon value, opportunity costs, compensation and valuation of compensation provided (for inset on top panel)
+#plot with carbon value, opportunity costs, compensation and valuation of compensation provided (for inset on bottom panel)
 comp.plot1i <- ggplot(comp.df.melt[c(14,1,3,4),], 
                      aes(variable, value, fill=variable, label=value)) + 
   geom_col(width = 0.5) + theme_bw() + 
@@ -638,38 +663,12 @@ comp.plot1i <- comp.plot1i +
 ##view plot
 comp.plot1i
 
-
-## plot with eligible households, households identified as PAPs, and those fully compensated (bottom panel)
-hh.plot1 <- ggplot(comp.df.melt[c(11:13,7,9),], 
-                    aes(variable, value, fill=variable, label=value)) + 
-  geom_col(width = 0.5) + 
-  theme_bw() + 
-  scale_fill_manual(values = c("royalblue","orange","orange","orange","orange")) + 
-  theme(legend.position = "none",
-        axis.text = element_text(size = 13, colour = "black"),
-        axis.title.y = element_text(size = 16)) + 
-  xlab("") + ylab("Number of HHs") + 
-  scale_y_continuous(breaks = seq(0, 6000, 1000)) +
-  scale_x_discrete(limits = c("pap_2xinc","pap_3xinc","pap_4xinc","sg_ided_hh","full_comp_hh"),
-                   labels = c("HHs with NPV of\nopportunity costs >\n2x annual income",
-                              "HHs with NPV of\nopportunity costs >\n3x annual income",
-                              "HHs with NPV of\nopportunity costs >\n4x annual income",
-                              "HHs identified\nto receive\ncompensation",
-                              "HHs fully\ncompensated"))
-
-hh.plot1 <- hh.plot1 + 
-  geom_text(position = position_dodge(0.9), vjust=-0.25) + 
-  annotate("text", x = 0.5, y = 6400, label = "b)", size = 9)
-
-##view plot
-hh.plot1
-
 ##for inset
 require(grid)
 vp1 <- viewport(width = 0.55, 
                 height = 0.36,
                 x = 0.71,
-                y = 0.81)
+                y = 0.31)
 
 ##pdf output with inset
 pdf("fig4.pdf", width = 11, height = 10) 
@@ -679,8 +678,8 @@ pushViewport(viewport(layout = grid.layout(2, 1)))
 vplayout <- function(x, y) 
   viewport(layout.pos.row = x, layout.pos.col = y)
 
-print(comp.plot1, vp = vplayout(1, 1)) 
-print(hh.plot1, vp = vplayout(2, 1))
+print(hh.plot1, vp = vplayout(1, 1)) 
+print(comp.plot1, vp = vplayout(2, 1))
 print(comp.plot1i, vp = vp1)
 dev.off()
 
