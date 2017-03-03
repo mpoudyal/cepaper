@@ -24,11 +24,15 @@ library(msm)
 library(ggplot2)
 library(grid)
 
-##function for calculating EAA factor (this when multiplied by the NPV OC estimate gives the annualised equivalent)
+## function for calculating EAA factor (this when multiplied by the NPV OC estimate gives the annualised equivalent)
 eaa <- function(t, r) {r/(1-(1+r)^-t)}
 
-##function for extracting total number of households with NPV OC greater than a given threshold in CAZ
+## function for extracting total number of households with NPV OC greater than a given threshold in CAZ
 pap_hh <- function(i, c) {round((sum(c>i)/196)*9837)}
+
+## Malagasy ariary to USD conversation rate used in the analyses 1 USD = 2702 ariary ## Median exchange rate for data collection period between July 2014 and June 2015
+## Source: World Bank (2017) Global Economic Monitor. Available at: http://data.worldbank.org/data-catalog/global-economic-monitor. Accessed 10/01/2017.
+fx <- 2702
 
 ## Function to draw convex hull around scatter plot (for SI Figure S1-b): from
 ## https://chitchatr.wordpress.com/2011/12/30/convex-hull-around-scatter-plot-in-r/
@@ -69,9 +73,9 @@ poverty.pca.set.nice <- c("Number of rooms",
                           "Irrigated rice", 
                           "Access to light", 
                           "Radio")
-## PCA [requires 'polycor' and 'psych' packages, load if not loaded already by uncommenting the lines below]
-# require(polycor)
-# require(psych)
+## PCA [requires 'polycor' and 'psych' packages, load if not loaded already]
+require(polycor)
+require(psych)
 poverty.cor <- with(poverty, hetcor(no_rooms, 
                                     as.ordered(house_qual),
                                     tlu, 
@@ -115,25 +119,15 @@ poverty$v.col <- with(poverty,
                                     ifelse(site=="Zahamena", "#7CAE00", "#F8766D"))))
 
 
-
-## Function to draw convex hull around scatter plot (for SI Figure S1-b): from
-## https://chitchatr.wordpress.com/2011/12/30/convex-hull-around-scatter-plot-in-r/
-
-Plot_ConvexHull<-function(xcoord, ycoord, lcolor){
-  hpts <- chull(x = xcoord, y = ycoord)
-  hpts <- c(hpts, hpts[1])
-  lines(xcoord[hpts], ycoord[hpts], col = lcolor)
-}
-
-## [requires 'dplyr' package, load if not loaded already by uncommenting the line below]
-# require(dplyr)
+## [requires 'dplyr' package, load if not loaded already]
+require(dplyr)
 poverty.nomis <- na.omit(poverty)
 find_hull <- function(df) df[chull(df$PC1, df$PC2), ]
 hulls <- poverty.nomis %>% group_by(site2) %>% do(find_hull(.))
 poverty.pca.loads <- data.frame(PC1=loadings(poverty.pca)[,1], PC2=loadings(poverty.pca)[,2], name=names(loadings(poverty.pca)[,1]))
 
-## PCA biplot (SI Figure S1-a) [requires 'ggplot2' package, load if not loaded already by uncommenting the line below]
-# require(ggplot2)
+## PCA biplot (SI Figure S1-a) [requires 'ggplot2' package, load if not loaded already]
+require(ggplot2)
 pcplot1 <- ggplot(poverty.pca.loads, aes(x=0, y=0, xend=PC1, yend=PC2, label=name)) +
     geom_text(aes(x=PC1, y=PC2, hjust="left")) +
     geom_segment(arrow=arrow(length=unit(0.2,"cm"))) + theme_bw() + xlab("Wealth axis 1") +
@@ -158,8 +152,8 @@ pcplot2 <- ggplot(poverty, aes(PC1, PC2, shape=site2, colour=site2, fill=site2))
 ## view plot
 pcplot2
 
-## Combining two plots to create a panel (SI Figure S1) [requires 'grid' package, load if not loaded already by uncommenting the line below]
-# require(grid)
+## Combining two plots to create a panel (SI Figure S1) [requires 'grid' package, load if not loaded already]
+require(grid)
 
 grid.draw(cbind(ggplotGrob(pcplot1), ggplotGrob(pcplot2), size="last"))
 
@@ -196,8 +190,8 @@ land$site <- factor(land$site, levels = site.org, labels = site.order)
 ## Land data preparation for plotting
 land$exists <- 1
 
-## without plot_type grouping (but keeping site groupings) [requires 'dplyr' package, load if not loaded already by uncommenting the line below]
-# require(dplyr)
+## without plot_type grouping (but keeping site groupings) [requires 'dplyr' package, load if not loaded already]
+require(dplyr)
 
 land.tmp <- tbl_df(land %>% filter(!is.na(plot_type), 
                                         !is.na(plot_ownership), 
@@ -231,8 +225,8 @@ land.all$Ownership <- factor(land.all$plot_ownership,
                                         "Rented", 
                                         "Borrowed"))
 
-## Plotting land data, grouped by sites [requires 'ggplot2' package, load if not loaded already by uncommenting the line below]
-# require(ggplot2)
+## Plotting land data, grouped by sites [requires 'ggplot2' package, load if not loaded already]
+require(ggplot2)
 land.plot <- land.all %>% filter(is.na(Ownership)==F) %>% 
   ggplot(aes(site, mean_prop, fill=Ownership)) +
   geom_bar(position=position_dodge(0.9), stat="identity") +
@@ -268,13 +262,13 @@ We use the data from the choice experiment - willing to accept (WTA) surveys (se
 all.wta <- read.csv("wta_all.csv")
 
 ## load necessary packages [if not already loaded]
-library(dplyr)
-library(gmnl)
-library(mlogit)
-library(msm)
-library(ggplot2)
-library(grid)
-library(scales)
+require(dplyr)
+require(gmnl)
+require(mlogit)
+require(msm)
+require(ggplot2)
+require(grid)
+require(scales)
 
 ##sort out dummy coding etc.
 all.wta$asc <- with(all.wta, ifelse(payment==0 & instalment==0 & rice_proj==0 & teviala==0, 1, 0))
@@ -329,8 +323,8 @@ paper.model.cons <- gmnl(choice ~ payment + asc +instalment2 + instalment3 + ric
                     model="mixl")
 summary(paper.model.cons)
 
-## Ariary to USD conversion (see main text for details on exchange rates and data source)
-usd.conversion <- 1e6/2702
+## Ariary to USD conversion (see first chunk above for details on exchange rates and data source)
+usd.conversion <- 1e6/fx
 formatterUSD <- function(x) {
     x * usd.conversion
 }
@@ -339,8 +333,8 @@ paper.model.cons.wta <- as.data.frame(wtp.gmnl(paper.model.cons, wrt="payment"))
 paper.model.cons.wta[ ,1:3] <- paper.model.cons.wta[ ,1:3]*usd.conversion
 paper.model.cons.wta[c(6, 23:30) , c(1, 3)] <- paper.model.cons.wta[c(6, 23:30) , c(1, 3)]*-1
 
-## [requires 'msm' package, load if not loaded already by uncommenting the line below]
-# require(msm)
+## [requires 'msm' package, load if not loaded already]
+require(msm)
 qtnorm.vec <- Vectorize(qtnorm, c("mean", "sd"))
 qtnorm.vec(0.975, paper.model.cons.wta[, 1], paper.model.cons.wta[,2], upper=0)
 
@@ -471,7 +465,7 @@ Since we only have total annual household income for a sub-sample of the househo
 oc.df <- read.csv("agri_hhinc.csv")
 
 ## convert total income in Ariary to USD
-oc.df$usd <- round(oc.df$tot_hh_inc/2702)
+oc.df$usd <- round(oc.df$tot_hh_inc/fx)
 
 ## load CE WTA model estimates saved as data file above [i.e., 'oc_all.csv']
 wta.oc.est <- read.csv("oc_all.csv")
@@ -479,9 +473,6 @@ wta.oc.est <- read.csv("oc_all.csv")
 ## combine CE WTA model opportunity cost estimates for agricultural survey households
 ## converting original output to positive values to use the magnitude of opportunity costs
 oc.df$opp_cost_est <- wta.oc.est[match(oc.df$resp_id, wta.oc.est$id), ]$teviala2*-1
-
-## function for calculating EAA factor (this when multiplied by the NPV OC estimate gives the annualised equivalent) [Load this function now if not already loaded]
-eaa <- function(t, r) {r/(1-(1+r)^-t)}
 
 ## add a new column with EAA value for current year for 60 year timeframe and discount rate ~ 0%
 oc.df$eaa60yr0pc <- oc.df$opp_cost_est*eaa(60,0.00001)
@@ -576,10 +567,7 @@ oc_caz.df <- subset(wta.oc.est, site=="Ampahitra" | site=="Sahavazina")
 ## converting original output to positive values to use the magnitude of opportunity costs
 oc_caz.df$opp_cost_est <- oc_caz.df$teviala2*-1
 
-##function for extracting total number of households with NPV OC greater than a given threshold in CAZ [Load the function below now if not already loaded]
-pap_hh <- function(i, c) {round((sum(c>i)/196)*9837)}
-
-#compute and add more data columns
+#compute and add more data columns [requires `pap_hh` function - see first chunk]
 ##number of potential pap households for 2x median hh income as the threshold (i.e., hhs with NPV OC > 2x median annual hh income)
 comp.df$pap_2xinc <- pap_hh(2*comp.df$med_hh_inc, oc_caz.df$opp_cost_est)
 
