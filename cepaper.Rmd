@@ -6,7 +6,7 @@ latest revision: "25 February 2017"
 output: html_document
 ---
 
-All data used in the avalyses and in producing the figures outlined here are included in this repository. To fully replicate the analyses and produce the figures (copies of which are included in the repository as pdf files), clone/download the repository and follow the steps outlined in this document.
+All data used in the analyses and in producing the figures outlined here are included in this repository. To fully replicate the analyses and produce the figures (copies of which are included in the repository as pdf files), clone/download the repository and follow the steps outlined in this document.
 
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
