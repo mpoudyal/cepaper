@@ -2,7 +2,7 @@
 title: "Data analysis and figures for the paper *Who bears the cost of forest conservation?*"
 authors: "Mahesh Poudyal and James Gibbons"
 date: "2 January 2017"
-latest revision: "25 February 2017"
+latest revision: "6 June 2017"
 output: html_document
 ---
 
@@ -234,8 +234,8 @@ land.plot <- land.all %>% filter(is.na(Ownership)==F) %>%
                 position=position_dodge(0.9), width=0.2) + 
   theme_bw() + xlab(NULL) + ylab("Proportion of plots\n") + 
   theme(text=element_text(size=20), 
-        axis.text.x=element_text(size=16, face = "bold", colour = "black"), 
-        axis.text.y=element_text(size=16,face= "bold", colour = "black"))
+        axis.text.x=element_text(size=16, colour = "black"), 
+        axis.text.y=element_text(size=16, colour = "black"))
 
 land.plot <- land.plot + theme(legend.position="top", 
                                      legend.title=element_blank(), 
@@ -724,8 +724,8 @@ occv.plot <- ggplot(sgf.df, aes(x=ocest, y=cvpcoc)) +
   geom_point() + theme_bw() + 
   coord_cartesian(ylim = c(-.02,.5)) + 
   scale_y_continuous(labels = scales::percent) + 
-  xlab("NPV of opportunity costs estimate (US$)") + 
-  ylab("Respondent's valuation of the compensation project as % of opportunity costs") +  
+  xlab("Opportunity costs estimate (US$)") + 
+  ylab("Respondent's valuation of the compensation project as % of opportunity costs\n") +  
   geom_smooth() + 
   theme(axis.title = element_text(size = 14),
         axis.text = element_text(size = 12))
@@ -766,19 +766,19 @@ summary(fit2)
 cazpop.plot <- ggplot(cazpop.melt, aes(x=p4ges, y=value, colour=variable)) + 
   geom_point() +
   geom_smooth(method="lm", se = FALSE) + 
-  xlab("\nPopulation data collected from P4ges field sites") + 
-  ylab("Distributed population data in P4ges field sites\n") +
+  xlab("\nPopulation data collected from study sites") + 
+  ylab("Distributed population data in study sites\n") +
   coord_cartesian(xlim = c(0,3100), ylim = c(0,3100)) + 
   scale_x_continuous(expand = c(0,0)) + 
   scale_y_continuous(expand = c(0,0)) +
   annotate("segment", x=-Inf, xend=Inf,y=-Inf, yend=Inf) + 
-  scale_colour_discrete(name="Population data distributed (vs P4ges field data)",
+  scale_colour_discrete(name="Population data distributed (vs field data)",
                         labels=c(ls07 = expression(paste(" LS07 (Adj. ",R^2,"=0.80)")),
                                  fkt2010 = expression(paste(" Fokontany 2010 (Adj. ",R^2,"=0.18)")))) +
   theme_bw() + 
   theme(legend.position=c(.35,.90),
         legend.background = element_rect(colour = "white"),
-        legend.title = element_text(size = 14, face = "bold"),
+        legend.title = element_text(size = 14),
         legend.text=element_text(size = 12),
         legend.text.align = 0,
         axis.title = element_text(size = 18),
