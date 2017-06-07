@@ -158,7 +158,7 @@ require(grid)
 grid.draw(cbind(ggplotGrob(pcplot1), ggplotGrob(pcplot2), size="last"))
 
 ## output as PDF
-pdf("si_fig_s1.pdf", width = 11, height = 5.5)
+pdf("sm_fig_s2.pdf", width = 11, height = 5.5)
 grid.draw(cbind(ggplotGrob(pcplot1), ggplotGrob(pcplot2), size="last"))
 dev.off()
 
@@ -248,7 +248,7 @@ land.plot <- land.plot + scale_y_continuous(labels = scales::percent) +
 land.plot
 
 ##pdf output
-pdf("si_fig_s2.pdf", width=11, height=8)
+pdf("sm_fig_s1.pdf", width=11, height=8)
 print(land.plot)
 dev.off()
 
@@ -351,6 +351,7 @@ paper.model.cons.wta$coefficient <- factor(c("asc", "Instalment 2", "Instalment 
                                             sep="*"),
                                       paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "Teviala 2"))))
 
+##For R versions up to R 3.3.x (duplicated levels in factor only produce warning, not error)
 paper.model.cons.wta$coefficient2 <- factor(c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard",
                                      paste(rep(c("", "", ""), each=8),
                                            c("Established PA\n(Mantadia)",
@@ -362,6 +363,28 @@ paper.model.cons.wta$coefficient2 <- factor(c("asc", "Instalment 2", "Instalment
                                       paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard"))),
                                       levels=c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard",
                                       paste(rep(c("", "", ""), each=8),
+                                            c("New PA\nwithout safeguard",
+                                          "Established PA\n(Zahamena)",
+                                          "Established PA\n(Mantadia)",
+                                          "Distance from forest\n(km)", "Household age\n(decades)",
+                                              "Education", "Wealth axis 1", "Wealth axis 2"),
+                                            sep=""),
+                                      paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard"))))
+paper.model.cons.wta$coefficient2 <- factor(paper.model.cons.wta$coefficient2, levels=rev(levels(paper.model.cons.wta$coefficient2)))
+
+
+##For R versions R 3.4.x and above (duplicated levels in factor produce error, hence unique levels required)
+paper.model.cons.wta$coefficient2 <- factor(c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard",
+                                     paste(rep(c("L1", "L2", ""), each=8),
+                                           c("Established PA\n(Mantadia)",
+                                             "New PA\nwithout safeguard",
+                                             "Established PA\n(Zahamena)",
+                                             "Distance from forest\n(km)", "Household age\n(decades)",
+                                             "Education", "Wealth axis 1", "Wealth axis 2"),
+                                            sep=""),
+                                      paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard"))),
+                                      levels=c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard",
+                                      paste(rep(c("L1", "L2", ""), each=8),
                                             c("New PA\nwithout safeguard",
                                           "Established PA\n(Zahamena)",
                                           "Established PA\n(Mantadia)",
@@ -734,7 +757,7 @@ occv.plot <- ggplot(sgf.df, aes(x=ocest, y=cvpcoc)) +
 occv.plot
 
 ##plot output as pdf
-pdf("fig5.pdf", width = 11, height = 8)
+pdf("sm_fig_s3.pdf", width = 11, height = 8)
 print(occv.plot)
 dev.off()
 
@@ -790,7 +813,7 @@ cazpop.plot <- ggplot(cazpop.melt, aes(x=p4ges, y=value, colour=variable)) +
 cazpop.plot
 
 ## plot output as pdf
-pdf("si_fig_s5.pdf", width = 8, height = 8)
+pdf("sm_fig_s6.pdf", width = 8, height = 8)
 print(cazpop.plot)
 dev.off()
 
