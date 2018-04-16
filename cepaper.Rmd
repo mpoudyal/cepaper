@@ -831,10 +831,12 @@ dev.off()
 
 <b id="f4">4.</b> Source: Rainforest Alliance (2013) *Reduced Emissions from Deforesation in the Ankeniheny-Zahamena Corridor, Madagascar - Validation Report: VCS Version 3*. Available at: https://goo.gl/Yj0gJV, accessed on 2016-12-06. [↩︎](#n4)
 
-<b id="f5">5.</b> Source: US EPA - "Social Cost of Carbon: Estimating the Benefits of Reducing Greenhouse Gas Emissions"  https://www.epa.gov/climatechange/social-cost-carbon, accessed on 20 Dec 2016. [↩︎](#n5)
+<b id="f5">5.</b> Source: Interagency Working Group on Social Cost of Greenhouse Gases, United States Government (2016) - "Technical Support Document: ­Technical Update of the Social Cost of Carbon for Regulatory Impact Analysis ­ Under Executive Order 12866, August 2016". [↩︎](#n5)
 
 <b id="f6">6.</b> http://www.policysupport.org/waterworld [↩︎](#n6)
 
 <b id="r1">7.</b> Poudyal, M., Rakotonarivo, O.S., Rasoamanana, A., Mandimbiniaina, R., Spener, N., Hockley, N., and Jones, J.P.G. 2016. "Household survey and discrete choice experiment for investigating the opportunity cost of conservation restrictions in eastern Madagascar." [Data Collection]. Colchester, Essex: UK Data Archive. doi: https://dx.doi.org/10.5255/UKDA-SN-852435. [↩︎](#n7)
 
 <b id="r2">8.</b> Rakotonarivo, O.S. 2016. "Improving the choice experiment method in assessing the local welfare impacts of forest conservation in low-income countries:  Empirical Evidence from Madagascar." PhD Thesis, Bangor University and University of Copenhagen. [↩︎](#n8)
+
+
