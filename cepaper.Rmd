@@ -30,7 +30,6 @@ tidyr     0.8.0
 ```
 
 ```{r setup, include=FALSE, echo=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
 # library and functions used in the analysis [can be loaded separately when required - see codes below]
 library(dplyr)
 library(magrittr)
