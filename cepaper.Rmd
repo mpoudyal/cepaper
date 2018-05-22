@@ -2,11 +2,32 @@
 title: "Data analysis and figures for the paper *Who bears the cost of forest conservation?*"
 authors: "Mahesh Poudyal and James Gibbons"
 date: "2 January 2017"
-latest revision: "6 June 2017"
+latest revision: "22 May 2018"
 output: html_document
 ---
 
-All data used in the analyses and in producing the figures outlined here are included in this repository. To fully replicate the analyses and produce the figures (copies of which are included in the repository as pdf files), clone/download the repository and follow the steps outlined in this document.
+All data used in the analyses and in producing the figures outlined here are included in this repository. To fully replicate the analyses and produce the figures (copies of which are included in the repository as pdf files), clone/download the repository and follow the steps outlined in this document. 
+
+Some of the analyses and production of figures might not fully replicate under different versions of R and the packages than we've used here (see section *Opportunity cost estimates from the CE model (NPV)* below for one such example). Version details for R and all packages used (this list doesn't include dependencies that load with these core packages) in this analysis is listed below:
+
+```
+R version 3.5.0 (2018-04-23)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: macOS Sierra 10.12.6
+
+dplyr     0.7.4
+ggplot2   2.2.1.9000
+gmnl      1.1-3
+grid      3.5.0 (R base package)
+magrittr  1.5
+mlogit    0.3-0
+msm       1.6.6
+polycor   0.7-9
+psych     1.8.3.3
+reshape2  1.4.3
+scales    0.5.0.9000
+tidyr     0.8.0
+```
 
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -48,7 +69,7 @@ Plot_ConvexHull<-function(xcoord, ycoord, lcolor){
 ## Landholding and livelihoods of households in Corridor Ankeniheny-Zahamena (CAZ)
 
 ### Principal component analysis (PCA) with wealth (poverty) indicators
-We use seven key local measures of wealth of the households in our study sites to derive poverty indices using PCA to feed into the choice experiment model, and to compare poverty among households between our sites (**SI Figure S1**). These measure are detailed in Table 2 in the main text. Data and codes in producing the **SI Figure S1** and PC scores that feed into the choice experiment model are outlined below.
+We use seven key local measures of wealth of the households in our study sites to derive poverty indices using PCA to feed into the choice experiment model, and to compare poverty among households between our sites (**Figure 2**). These measure are detailed in Table 2 in the main text. Data and codes in producing **Figure 2** and PC scores that feed into the choice experiment model are outlined below.
 
 ```{r poverty_pca, echo=FALSE}
 # Household (HH) information and wealth/poverty indicators
@@ -89,7 +110,7 @@ poverty.pca <- principal(r=poverty.cor$correlations, rotate="none", nfactors=2)
 summary(poverty.pca)
 poverty.pca
 
-## Basic PCA plot
+## Basic PCA plot (not included in the publication)
 plot(poverty.pca, labels=poverty.pca.set.nice)
 
 ## PCA prediction data and adding PC scores to 'poverty' data frame
@@ -126,7 +147,7 @@ find_hull <- function(df) df[chull(df$PC1, df$PC2), ]
 hulls <- poverty.nomis %>% group_by(site2) %>% do(find_hull(.))
 poverty.pca.loads <- data.frame(PC1=loadings(poverty.pca)[,1], PC2=loadings(poverty.pca)[,2], name=names(loadings(poverty.pca)[,1]))
 
-## PCA biplot (SI Figure S1-a) [requires 'ggplot2' package, load if not loaded already]
+## PCA biplot (Fig 2-a) [requires 'ggplot2' package, load if not loaded already]
 require(ggplot2)
 pcplot1 <- ggplot(poverty.pca.loads, aes(x=0, y=0, xend=PC1, yend=PC2, label=name)) +
     geom_text(aes(x=PC1, y=PC2, hjust="left")) +
@@ -137,7 +158,7 @@ pcplot1 <- ggplot(poverty.pca.loads, aes(x=0, y=0, xend=PC1, yend=PC2, label=nam
 ## view plot
 pcplot1
 
-## PCA scatter plot for all sites with convex hulls around scatter plot for each site (SI Figure S1-b)
+## PCA scatter plot for all sites with convex hulls around scatter plot for each site (Fig 2-b)
 pcplot2 <- ggplot(poverty, aes(PC1, PC2, shape=site2, colour=site2, fill=site2)) +
     geom_point() +
     geom_polygon(data = hulls, alpha = 0.1) +
@@ -152,20 +173,20 @@ pcplot2 <- ggplot(poverty, aes(PC1, PC2, shape=site2, colour=site2, fill=site2))
 ## view plot
 pcplot2
 
-## Combining two plots to create a panel (SI Figure S1) [requires 'grid' package, load if not loaded already]
+## Combining two plots to create a panel (Figure 2) [requires 'grid' package, load if not loaded already]
 require(grid)
 
 grid.draw(cbind(ggplotGrob(pcplot1), ggplotGrob(pcplot2), size="last"))
 
 ## output as PDF
-pdf("sm_fig_s2.pdf", width = 11, height = 5.5)
+pdf("fig2.pdf", width = 11, height = 5.5)
 grid.draw(cbind(ggplotGrob(pcplot1), ggplotGrob(pcplot2), size="last"))
 dev.off()
 
 ```
 
 ### Summarising households' access to land
-We use the data on landholding and ways respondent households gained access to their plots of land, obtained from the first phase of the survey (see main text and SI, and <b id="n7">[Poudyal et al. (2016)](#r1)</b>) to produce **SI Figure S2** that summarises the various ways households in our study sites gained access to their plots of land. Steps involved in producing **SI Figure S2** with codes below.
+We use the data on landholding and ways respondent households gained access to their plots of land, obtained from the first phase of the survey (see main text and SI, and <b id="n7">[Poudyal et al. (2016)](#r1)</b>) to produce **SI Figure 1** that summarises the various ways households in our study sites gained access to their plots of land. Steps involved in producing **SI Figure 1** with codes below.
 
 ```{r land_access, echo=FALSE}
 ## land holding data
@@ -218,7 +239,7 @@ land.all <- land.all %>%
   mutate(sumprop=sum(mean_prop), mean_prop=mean_prop/sumprop,
          LL=LL/sumprop, UL=UL/sumprop)
 
-land.all$Ownership <- factor(land.all$plot_ownership, 
+land.all$Ownership <- factor(land.all$plot_ownership,
                              levels = c("Inherited", 
                                         "Cleared", 
                                         "Bought", 
@@ -227,11 +248,11 @@ land.all$Ownership <- factor(land.all$plot_ownership,
 
 ## Plotting land data, grouped by sites [requires 'ggplot2' package, load if not loaded already]
 require(ggplot2)
-land.plot <- land.all %>% filter(is.na(Ownership)==F) %>% 
-  ggplot(aes(site, mean_prop, fill=Ownership)) +
-  geom_bar(position=position_dodge(0.9), stat="identity") +
+land.plot <- land.all %>% 
+  ggplot(aes(site, mean_prop, fill = Ownership)) +
+  geom_bar(position="dodge2", stat="identity") +
   geom_errorbar(aes(ymin=LL, ymax=UL),
-                position=position_dodge(0.9), width=0.2) + 
+                position=position_dodge2(width = 0.5, padding = 0.5)) + 
   theme_bw() + xlab(NULL) + ylab("Proportion of plots\n") + 
   theme(text=element_text(size=20), 
         axis.text.x=element_text(size=16, colour = "black"), 
@@ -248,7 +269,7 @@ land.plot <- land.plot + scale_y_continuous(labels = scales::percent) +
 land.plot
 
 ##pdf output
-pdf("sm_fig_s1.pdf", width=11, height=8)
+pdf("si_fig_1.pdf", width=11, height=8)
 print(land.plot)
 dev.off()
 
@@ -351,29 +372,30 @@ paper.model.cons.wta$coefficient <- factor(c("asc", "Instalment 2", "Instalment 
                                             sep="*"),
                                       paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "Teviala 2"))))
 
-##For R versions up to R 3.3.x (duplicated levels in factor only produce warning, not error)
-paper.model.cons.wta$coefficient2 <- factor(c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard",
-                                     paste(rep(c("", "", ""), each=8),
-                                           c("Established PA\n(Mantadia)",
-                                             "New PA\nwithout safeguard",
-                                             "Established PA\n(Zahamena)",
-                                             "Distance from forest\n(km)", "Household age\n(decades)",
-                                             "Education", "Wealth axis 1", "Wealth axis 2"),
-                                            sep=""),
-                                      paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard"))),
-                                      levels=c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard",
-                                      paste(rep(c("", "", ""), each=8),
-                                            c("New PA\nwithout safeguard",
-                                          "Established PA\n(Zahamena)",
-                                          "Established PA\n(Mantadia)",
-                                          "Distance from forest\n(km)", "Household age\n(decades)",
-                                              "Education", "Wealth axis 1", "Wealth axis 2"),
-                                            sep=""),
-                                      paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard"))))
-paper.model.cons.wta$coefficient2 <- factor(paper.model.cons.wta$coefficient2, levels=rev(levels(paper.model.cons.wta$coefficient2)))
+
+##For R versions up to R 3.3.x (duplicated levels in factor only produce warning, not error) and code below works. Uncomment to use for R versions up to 3.3.x.
+#paper.model.cons.wta$coefficient2 <- factor(c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard",
+#                                     paste(rep(c("", "", ""), each=8),
+#                                           c("Established PA\n(Mantadia)",
+#                                             "New PA\nwithout safeguard",
+#                                             "Established PA\n(Zahamena)",
+#                                             "Distance from forest\n(km)", "Household age\n(decades)",
+#                                             "Education", "Wealth axis 1", "Wealth axis 2"),
+#                                            sep=""),
+#                                      paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard"))),
+#                                      levels=c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard",
+#                                      paste(rep(c("", "", ""), each=8),
+#                                            c("New PA\nwithout safeguard",
+#                                          "Established PA\n(Zahamena)",
+#                                          "Established PA\n(Mantadia)",
+#                                          "Distance from forest\n(km)", "Household age\n(decades)",
+#                                              "Education", "Wealth axis 1", "Wealth axis 2"),
+#                                            sep=""),
+#                                      paste("SD", c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard"))))
+#paper.model.cons.wta$coefficient2 <- factor(paper.model.cons.wta$coefficient2, levels=rev(levels(paper.model.cons.wta$coefficient2)))
 
 
-##For R versions R 3.4.x and above (duplicated levels in factor produce error, hence unique levels required)
+##For R versions R 3.4.x and above (duplicated levels in factor produce error, hence unique levels required). Use code below for R 3.4.x and above.
 paper.model.cons.wta$coefficient2 <- factor(c("asc", "Instalment 2", "Instalment 3", "Rice project", "Teviala 1", "New PA\nwith safeguard",
                                      paste(rep(c("L1", "L2", ""), each=8),
                                            c("Established PA\n(Mantadia)",
@@ -463,13 +485,13 @@ wta.violin.plot <- ggplot(all.wta.ind.cons,
 
 wta.violin.plot
 
-## Combining two plots to create a panel (Figure 2)
+## Combining two plots to create a panel (Figure 3)
 grid.draw(cbind(ggplotGrob(wta.violin.plot), 
                 ggplotGrob(wta.coef.plot), 
                 size="last"))
 
 ## output as PDF
-pdf("fig2.pdf", width = 12, height = 6)
+pdf("fig3.pdf", width = 12, height = 6)
 grid.draw(cbind(ggplotGrob(wta.violin.plot), 
                 ggplotGrob(wta.coef.plot), 
                 size="last"))
@@ -519,21 +541,21 @@ oc.df.sub1 <- subset(oc.df,
 ## melt subsetted data for easy plotting against annual household income (usd)
 oc.df.sub1.melt <- melt(oc.df.sub1, id="usd")
 
-# Plotting annualised equivalent of opportunity costs against total annual household income
+# Plotting annualised equivalent of opportunity costs against total annual household income (Figure 4)
 oc_hhinc_plot <- ggplot(oc.df.sub1.melt, aes(x=usd, y=value,
                                     colour=variable)) +
             geom_point(alpha=0.9) +
-            geom_smooth(method='gam') +
+            geom_smooth(method = "loess") +
             coord_cartesian(xlim = c(50,500), ylim = c(-.05,3)) +
             xlab("\nTotal annual household income (US$)") +
             ylab("Annualised household opportunity costs as % of total household income\n") +
             scale_x_continuous(breaks = seq(50,500,50)) + 
             scale_y_continuous(breaks = seq(0,3,.5), labels = scales::percent) + 
             scale_colour_discrete(name="Time frame (t) and discount rate (r)",
-                 breaks=c("prop1","prop2","prop3"),
-                                labels=c(" t = 60 years, r = 0.001%",
+                 breaks=c("prop3","prop2","prop1"),
+                                labels=c(" t = 60 years, r = 5%",
                                          " t = 60 years, r = 2.5%",
-                                         " t = 60 years, r = 5%")) +
+                                         " t = 60 years, r = 0.001%")) + 
             theme_bw() +
             theme(legend.position=c(.8,.9),
                   legend.background = element_rect(colour = "black"),
@@ -555,7 +577,7 @@ oc_hhinc_plot <- oc_hhinc_plot + geom_vline(xintercept = 233,
 oc_hhinc_plot
 
 ## output plot as pdf
-pdf("fig3.pdf", width = 11, height = 8)
+pdf("fig4.pdf", width = 11, height = 8)
 print(oc_hhinc_plot)
 dev.off()
 
@@ -682,7 +704,7 @@ vp1 <- viewport(width = 0.55,
                 y = 0.31)
 
 ##pdf output with inset
-pdf("fig4.pdf", width = 11, height = 10) 
+pdf("fig5.pdf", width = 11, height = 10) 
 
 pushViewport(viewport(layout = grid.layout(2, 1)))
 
@@ -758,7 +780,7 @@ occv.plot <- ggplot(sgf.df, aes(x=ocest, y=cvpcoc)) +
 occv.plot
 
 ##plot output as pdf
-pdf("sm_fig_s3.pdf", width = 11, height = 8)
+pdf("si_fig2.pdf", width = 11, height = 8)
 print(occv.plot)
 dev.off()
 
@@ -814,7 +836,7 @@ cazpop.plot <- ggplot(cazpop.melt, aes(x=p4ges, y=value, colour=variable)) +
 cazpop.plot
 
 ## plot output as pdf
-pdf("sm_fig_s6.pdf", width = 8, height = 8)
+pdf("si_fig_5.pdf", width = 8, height = 8)
 print(cazpop.plot)
 dev.off()
 
@@ -831,7 +853,8 @@ dev.off()
 
 <b id="f4">4.</b> Source: Rainforest Alliance (2013) *Reduced Emissions from Deforesation in the Ankeniheny-Zahamena Corridor, Madagascar - Validation Report: VCS Version 3*. Available at: https://goo.gl/Yj0gJV, accessed on 2016-12-06. [↩︎](#n4)
 
-<b id="f5">5.</b> Source: Interagency Working Group on Social Cost of Greenhouse Gases, United States Government (2016) - "Technical Support Document: ­Technical Update of the Social Cost of Carbon for Regulatory Impact Analysis ­ Under Executive Order 12866, August 2016". [↩︎](#n5)
+<b id="f5">5.</b> Source: Interagency Working Group on Social Cost of Greenhouse Gases, United States Government (2016) - "Technical Support Document: ­
+Technical Update of the Social Cost of Carbon for Regulatory Impact Analysis ­ Under Executive Order 12866, August 2016". [↩︎](#n5)
 
 <b id="f6">6.</b> http://www.policysupport.org/waterworld [↩︎](#n6)
 
