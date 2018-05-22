@@ -4,6 +4,8 @@ authors: "Mahesh Poudyal and James Gibbons"
 date: "2 January 2017"
 latest revision: "22 May 2018"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 All data used in the analyses and in producing the figures outlined here are included in this repository. To fully replicate the analyses and produce the figures (copies of which are included in the repository as pdf files), clone/download the repository and follow the steps outlined in this document. 
@@ -12,20 +14,18 @@ Some of the analyses and production of figures might not fully replicate under d
 
 ```
 R version 3.5.0 (2018-04-23)
-Platform: x86_64-apple-darwin15.6.0 (64-bit)
-Running under: macOS Sierra 10.12.6
 
 dplyr     0.7.4
-ggplot2   2.2.1.9000
+ggplot2   2.2.1
 gmnl      1.1-3
 grid      3.5.0 (R base package)
 magrittr  1.5
 mlogit    0.3-0
 msm       1.6.6
 polycor   0.7-9
-psych     1.8.3.3
+psych     1.8.4
 reshape2  1.4.3
-scales    0.5.0.9000
+scales    0.5.0
 tidyr     0.8.0
 ```
 
@@ -250,9 +250,9 @@ land.all$Ownership <- factor(land.all$plot_ownership,
 require(ggplot2)
 land.plot <- land.all %>% 
   ggplot(aes(site, mean_prop, fill = Ownership)) +
-  geom_bar(position="dodge2", stat="identity") +
+  geom_bar(position="dodge", stat="identity") +
   geom_errorbar(aes(ymin=LL, ymax=UL),
-                position=position_dodge2(width = 0.5, padding = 0.5)) + 
+                position=position_dodge(width = 0.9)) + 
   theme_bw() + xlab(NULL) + ylab("Proportion of plots\n") + 
   theme(text=element_text(size=20), 
         axis.text.x=element_text(size=16, colour = "black"), 
@@ -853,8 +853,7 @@ dev.off()
 
 <b id="f4">4.</b> Source: Rainforest Alliance (2013) *Reduced Emissions from Deforesation in the Ankeniheny-Zahamena Corridor, Madagascar - Validation Report: VCS Version 3*. Available at: https://goo.gl/Yj0gJV, accessed on 2016-12-06. [↩︎](#n4)
 
-<b id="f5">5.</b> Source: Interagency Working Group on Social Cost of Greenhouse Gases, United States Government (2016) - "Technical Support Document: ­
-Technical Update of the Social Cost of Carbon for Regulatory Impact Analysis ­ Under Executive Order 12866, August 2016". [↩︎](#n5)
+<b id="f5">5.</b> Source: Interagency Working Group on Social Cost of Greenhouse Gases, United States Government (2016) - "Technical Support Document: Technical Update of the Social Cost of Carbon for Regulatory Impact Analysis Under Executive Order 12866, August 2016". [↩︎](#n5)
 
 <b id="f6">6.</b> http://www.policysupport.org/waterworld [↩︎](#n6)
 
